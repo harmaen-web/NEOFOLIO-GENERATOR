@@ -16,6 +16,7 @@
     "pdfjs-dist": "^5.4.149",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "react-syntax-highlighter": "^15.6.6",
     "tailwindcss": "^4.1.13",
     "tesseract.js": "^6.0.1"
   },

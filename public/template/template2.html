@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portfolio Template 2 - Sidebar</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gray-50 text-gray-900">
+  <div class="flex min-h-screen">
+    <aside class="w-72 bg-white border-r border-gray-200 p-6">
+      <div class="flex flex-col items-center">
+        <img id="profilePic" src="" alt="profile" class="w-24 h-24 rounded-full object-cover border" />
+        <h1 id="name" class="mt-4 text-xl font-bold">Your Name</h1>
+        <p id="location" class="mt-1 text-xs text-gray-600"></p>
+        <div id="contacts" class="mt-2 text-xs text-gray-700 text-center"></div>
+        <div class="mt-3 flex flex-col gap-2 text-sm">
+          <a id="githubUrl" href="#" class="text-blue-600 hover:underline">GitHub</a>
+          <a id="linkedin" href="#" class="text-blue-600 hover:underline">LinkedIn</a>
+          <a id="website" href="#" class="text-blue-600 hover:underline"></a>
+        </div>
+      </div>
+      <div class="mt-6 grid grid-cols-3 gap-2 text-center text-xs text-gray-600">
+        <div><div class="font-semibold" id="followers">0</div>Followers</div>
+        <div><div class="font-semibold" id="following">0</div>Following</div>
+        <div><div class="font-semibold" id="publicRepos">0</div>Repos</div>
+      </div>
+    </aside>
+
+    <main class="flex-1 p-8 space-y-8">
+      <section>
+        <h2 class="text-lg font-semibold">Summary</h2>
+        <p id="bio" class="mt-2 text-gray-700 max-w-2xl">Short summary goes here.</p>
+      </section>
+
+      <section>
+        <h2 class="text-lg font-semibold">Education</h2>
+        <div id="education" class="mt-3 space-y-3"></div>
+      </section>
+
+      <section>
+        <h2 class="text-lg font-semibold">Experience</h2>
+        <div id="experience" class="mt-3 space-y-3"></div>
+      </section>
+
+      <section>
+        <h2 class="text-lg font-semibold">Projects</h2>
+        <div id="projects" class="mt-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+      </section>
+
+      <section>
+        <h2 class="text-lg font-semibold">Technical Skills</h2>
+        <div id="skills" class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      </section>
+
+      <section>
+        <h2 class="text-lg font-semibold">Certifications</h2>
+        <div id="certifications" class="mt-3 space-y-3"></div>
+      </section>
+
+      <section>
+        <h2 class="text-lg font-semibold">Achievements</h2>
+        <ul id="achievements" class="mt-3 list-disc pl-6 space-y-1"></ul>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    function t(v){return v?String(v):''}
+    function fillTemplate(data) {
+      const p = data.personal_info || data.personal || {};
+      const gh = p.github || {};
+      document.getElementById('name').textContent = p.name || p.username || 'Your Name';
+      document.getElementById('profilePic').src = gh.profile_pic || p.profilePic || 'https://via.placeholder.com/96';
+      document.getElementById('bio').textContent = t(data.summary || p.bio);
+      document.getElementById('location').textContent = '';
+      document.getElementById('contacts').textContent = [p.email, p.phone].filter(Boolean).join(' • ');
+
+      const ghLink = gh.profile_url || p.githubUrl; const liLink = p.linkedin; const web = p.website;
+      const ghEl = document.getElementById('githubUrl'); ghEl.href = ghLink || '#'; ghEl.textContent = ghLink ? 'GitHub' : '';
+      const liEl = document.getElementById('linkedin'); liEl.href = liLink || '#'; liEl.textContent = liLink ? 'LinkedIn' : '';
+      const wEl = document.getElementById('website'); wEl.href = web || '#'; wEl.textContent = web ? 'Website' : '';
+
+      document.getElementById('followers').textContent = gh.followers ?? 0;
+      document.getElementById('following').textContent = gh.following ?? 0;
+      document.getElementById('publicRepos').textContent = gh.public_repos ?? 0;
+
+      const eduWrap = document.getElementById('education'); eduWrap.innerHTML='';
+      (data.education||[]).forEach(ed=>{
+        const el=document.createElement('div'); el.className='bg-white border border-gray-200 rounded-lg p-4 shadow-sm';
+        el.innerHTML = `<div class='flex items-center justify-between'><div><div class='font-semibold'>${t(ed.institution)}</div><div class='text-sm text-gray-700'>${t(ed.degree)}</div></div><div class='text-xs text-gray-600'>${t(ed.years)}${ed.cgpa?` • CGPA: ${ed.cgpa}`:''}</div></div>`;
+        eduWrap.appendChild(el);
+      });
+
+      const expWrap = document.getElementById('experience'); expWrap.innerHTML='';
+      (data.experience||[]).forEach(ex=>{
+        const el=document.createElement('div'); el.className='bg-white border border-gray-200 rounded-lg p-4 shadow-sm';
+        const resp=(ex.responsibilities||[]).map(r=>`<li class='list-disc ml-4'>${t(r)}</li>`).join('');
+        el.innerHTML = `<div class='flex items-center justify-between'><div><div class='font-semibold'>${t(ex.title)} • ${t(ex.company)}</div><div class='text-xs text-gray-600'>${t(ex.location)}</div></div><div class='text-xs text-gray-600'>${t(ex.duration)}</div></div>${resp?`<ul class='mt-2 text-sm text-gray-700 space-y-1'>${resp}</ul>`:''}`;
+        expWrap.appendChild(el);
+      });
+
+      const prWrap = document.getElementById('projects'); prWrap.innerHTML='';
+      (data.projects||data.repos||[]).forEach(pr=>{
+        const el=document.createElement('div'); el.className='bg-white border border-gray-200 rounded-lg p-4 shadow-sm';
+        const tech = Array.isArray(pr.technologies)?pr.technologies.join(', '):(pr.techStack||'');
+        const repo = pr.github_link || pr.repoLink;
+        const stars = pr.stars || 0; const forks = pr.forks || 0;
+        el.innerHTML = `<h3 class='font-semibold'>${t(pr.name||pr.title)}</h3><p class='mt-1 text-sm text-gray-700'>${t(pr.description)}</p><div class='mt-2 text-xs text-gray-600'>${t(tech)}</div><div class='mt-2 text-xs text-gray-600'>${pr.live_demo?`Live: ${t(pr.live_demo)}`:''}</div><div class='mt-2 text-xs text-gray-600'>${stars?`⭐ ${stars}`:''} ${forks?`• 🍴 ${forks}`:''}</div>${repo?`<a class='mt-3 inline-block text-blue-600 hover:underline text-sm' href='${repo}' target='_blank'>View Repo</a>`:''}`;
+        prWrap.appendChild(el);
+      });
+
+      const skillsWrap=document.getElementById('skills'); skillsWrap.innerHTML='';
+      const skills=data.technical_skills||data.skills||{}; Object.entries(skills).forEach(([k,v])=>{
+        const el=document.createElement('div'); el.className='bg-white border border-gray-200 rounded-lg p-4 shadow-sm';
+        const list=Array.isArray(v)?v:[]; el.innerHTML=`<div class='font-semibold'>${k.replace(/_/g,' ')}</div><div class='mt-1 text-sm text-gray-700'>${list.join(', ')}</div>`; skillsWrap.appendChild(el);
+      });
+
+      const certWrap=document.getElementById('certifications'); certWrap.innerHTML='';
+      (data.certifications||[]).forEach(c=>{
+        const el=document.createElement('div'); el.className='bg-white border border-gray-200 rounded-lg p-4 shadow-sm';
+        el.innerHTML = `<div class='flex items-center justify-between'><div class='font-semibold'>${t(c.name)}</div><div class='text-xs text-gray-600'>${t(c.date)}</div></div><p class='mt-1 text-sm text-gray-700'>${t(c.details)}</p>`; certWrap.appendChild(el);
+      });
+
+      const achWrap=document.getElementById('achievements'); achWrap.innerHTML='';
+      (data.achievements||[]).forEach(a=>{ const li=document.createElement('li'); li.textContent=t(a); achWrap.appendChild(li); });
+    }
+
+    window.applyPortfolio = fillTemplate;
+    window.addEventListener('message', (e) => {
+      if (e.origin !== window.location.origin) return;
+      const msg = e.data; if (msg && msg.type === 'APPLY_PORTFOLIO') { try { window.applyPortfolio(msg.payload); } catch {} }
+    });
+    window.parent && window.parent.postMessage('REQUEST_PORTFOLIO', window.location.origin);
+  </script>
+</body>
+</html>

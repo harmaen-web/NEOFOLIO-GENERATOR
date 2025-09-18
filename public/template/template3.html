@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portfolio Template 3 - Minimal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-white text-gray-900">
+  <div class="mx-auto max-w-4xl px-6 py-8">
+    <!-- Header -->
+    <header class="text-center">
+      <img id="profile_pic" alt="avatar" class="mx-auto w-24 h-24 rounded-full object-cover border border-gray-200" />
+      <h1 id="name" class="mt-4 text-3xl font-extrabold">Your Name</h1>
+      <p id="summary" class="mt-2 text-gray-700"></p>
+      <div class="mt-3 flex justify-center flex-wrap gap-3 text-sm text-gray-700">
+        <span id="email"></span>
+        <span id="phone"></span>
+        <a id="linkedin" href="#" target="_blank" class="text-blue-600 hover:underline"></a>
+        <a id="github" href="#" target="_blank" class="text-blue-600 hover:underline"></a>
+      </div>
+      <div class="mt-2 text-xs text-gray-600" id="github_stats"></div>
+    </header>
+
+    <!-- Education -->
+    <section class="mt-10">
+      <h2 class="text-xl font-semibold">Education</h2>
+      <div id="education" class="mt-3 space-y-3"></div>
+    </section>
+
+    <!-- Experience -->
+    <section class="mt-10">
+      <h2 class="text-xl font-semibold">Experience</h2>
+      <div id="experience" class="mt-3 space-y-4"></div>
+    </section>
+
+    <!-- Projects -->
+    <section class="mt-10">
+      <h2 class="text-xl font-semibold">Projects</h2>
+      <div id="projects" class="mt-3 grid grid-cols-1 gap-4"></div>
+    </section>
+
+    <!-- Skills -->
+    <section class="mt-10">
+      <h2 class="text-xl font-semibold">Technical Skills</h2>
+      <div id="skills" class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+    </section>
+
+    <!-- Certifications -->
+    <section class="mt-10">
+      <h2 class="text-xl font-semibold">Certifications</h2>
+      <div id="certifications" class="mt-3 space-y-3"></div>
+    </section>
+
+    <!-- Achievements -->
+    <section class="mt-10">
+      <h2 class="text-xl font-semibold">Achievements</h2>
+      <ul id="achievements" class="mt-3 list-disc pl-6 space-y-1"></ul>
+    </section>
+  </div>
+
+  <script>
+    function textOrEmpty(v) { return v ? String(v) : ''; }
+    function linkOrEmpty(href, label) { return href ? `<a class="text-blue-600 hover:underline" href="${href}" target="_blank">${label || href}</a>` : ''; }
+
+    function renderEducation(list) {
+      const wrap = document.getElementById('education');
+      wrap.innerHTML = '';
+      (list || []).forEach(ed => {
+        const el = document.createElement('div');
+        el.className = 'border border-gray-200 rounded-lg p-4';
+        el.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="font-semibold">${textOrEmpty(ed.institution)}</div>
+              <div class="text-sm text-gray-700">${textOrEmpty(ed.degree)}</div>
+            </div>
+            <div class="text-xs text-gray-600">${textOrEmpty(ed.years)}${ed.cgpa ? ` • CGPA: ${ed.cgpa}` : ''}</div>
+          </div>
+        `;
+        wrap.appendChild(el);
+      });
+    }
+
+    function renderExperience(list) {
+      const wrap = document.getElementById('experience');
+      wrap.innerHTML = '';
+      (list || []).forEach(ex => {
+        const el = document.createElement('div');
+        el.className = 'border border-gray-200 rounded-lg p-4';
+        const respHtml = (ex.responsibilities || []).map(r => `<li class="ml-4 list-disc">${textOrEmpty(r)}</li>`).join('');
+        el.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="font-semibold">${textOrEmpty(ex.title)} • ${textOrEmpty(ex.company)}</div>
+              <div class="text-xs text-gray-600">${textOrEmpty(ex.location)}</div>
+            </div>
+            <div class="text-xs text-gray-600">${textOrEmpty(ex.duration)}</div>
+          </div>
+          ${respHtml ? `<ul class="mt-2 text-sm text-gray-700 space-y-1">${respHtml}</ul>` : ''}
+        `;
+        wrap.appendChild(el);
+      });
+    }
+
+    function renderProjects(list) {
+      const wrap = document.getElementById('projects');
+      wrap.innerHTML = '';
+      (list || []).forEach(pr => {
+        const el = document.createElement('div');
+        el.className = 'border border-gray-200 rounded-lg p-4';
+        const tech = Array.isArray(pr.technologies) ? pr.technologies.join(', ') : (pr.techStack || '');
+        const repo = pr.github_link || pr.repoLink;
+        const stars = pr.stars || 0; const forks = pr.forks || 0;
+        el.innerHTML = `
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <div class="font-semibold text-lg">${textOrEmpty(pr.name || pr.title)}</div>
+              <p class="mt-1 text-gray-700 text-sm">${textOrEmpty(pr.description)}</p>
+              <div class="mt-2 text-xs text-gray-600">${textOrEmpty(tech)}</div>
+              <div class="mt-2 text-xs text-gray-600">${pr.live_demo ? `Live: ${textOrEmpty(pr.live_demo)}` : ''}</div>
+            </div>
+            <div class="text-xs text-gray-600 whitespace-nowrap">${stars ? `⭐ ${stars}` : ''} ${forks ? `• 🍴 ${forks}` : ''}</div>
+          </div>
+          ${repo ? `<a class="mt-3 inline-block text-blue-600 hover:underline text-sm" href="${repo}" target="_blank">View Repo</a>` : ''}
+        `;
+        wrap.appendChild(el);
+      });
+    }
+
+    function renderSkills(skills) {
+      const wrap = document.getElementById('skills');
+      wrap.innerHTML = '';
+      if (!skills || typeof skills !== 'object') return;
+      Object.entries(skills).forEach(([cat, items]) => {
+        const el = document.createElement('div');
+        el.className = 'border border-gray-200 rounded-lg p-4';
+        const list = Array.isArray(items) ? items : [];
+        el.innerHTML = `
+          <div class="font-semibold">${cat.replace(/_/g,' ')}</div>
+          <div class="mt-1 text-sm text-gray-700">${list.join(', ')}</div>
+        `;
+        wrap.appendChild(el);
+      });
+    }
+
+    function renderCertifications(list) {
+      const wrap = document.getElementById('certifications');
+      wrap.innerHTML = '';
+      (list || []).forEach(c => {
+        const el = document.createElement('div');
+        el.className = 'border border-gray-200 rounded-lg p-4';
+        el.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div class="font-semibold">${textOrEmpty(c.name)}</div>
+            <div class="text-xs text-gray-600">${textOrEmpty(c.date)}</div>
+          </div>
+          <p class="mt-1 text-sm text-gray-700">${textOrEmpty(c.details)}</p>
+        `;
+        wrap.appendChild(el);
+      });
+    }
+
+    function renderAchievements(list) {
+      const wrap = document.getElementById('achievements');
+      wrap.innerHTML = '';
+      (list || []).forEach(a => {
+        const li = document.createElement('li');
+        li.textContent = textOrEmpty(a);
+        wrap.appendChild(li);
+      });
+    }
+
+    function fillTemplate(data) {
+      // Accept both new shape and previous shape
+      const p = data.personal_info || data.personal || {};
+      const gh = p.github || {};
+      const name = p.name || p.username || 'Your Name';
+      document.getElementById('name').textContent = name;
+      document.getElementById('summary').textContent = textOrEmpty(data.summary || p.bio);
+      document.getElementById('profile_pic').src = gh.profile_pic || p.profilePic || 'https://via.placeholder.com/96';
+      document.getElementById('email').textContent = p.email ? `✉️ ${p.email}` : '';
+      document.getElementById('phone').textContent = p.phone ? `📞 ${p.phone}` : '';
+      const linkedinLink = p.linkedin ? linkOrEmpty(p.linkedin, 'LinkedIn') : '';
+      const githubLink = (gh.profile_url || p.githubUrl) ? linkOrEmpty(gh.profile_url || p.githubUrl, 'GitHub') : '';
+      document.getElementById('linkedin').outerHTML = linkedinLink || '';
+      document.getElementById('github').outerHTML = githubLink || '';
+      const stats = [];
+      if (gh.followers != null) stats.push(`Followers: ${gh.followers}`);
+      if (gh.following != null) stats.push(`Following: ${gh.following}`);
+      if (gh.public_repos != null) stats.push(`Repos: ${gh.public_repos}`);
+      document.getElementById('github_stats').textContent = stats.join(' • ');
+
+      renderEducation(data.education);
+      renderExperience(data.experience);
+      renderProjects(data.projects || data.repos);
+      renderSkills(data.technical_skills || data.skills);
+      renderCertifications(data.certifications);
+      renderAchievements(data.achievements);
+    }
+
+    window.applyPortfolio = fillTemplate;
+
+    // Listen for postMessage from parent to apply data
+    window.addEventListener('message', (e) => {
+      if (e.origin !== window.location.origin) return;
+      const msg = e.data;
+      if (msg && msg.type === 'APPLY_PORTFOLIO') {
+        try { window.applyPortfolio(msg.payload); } catch {}
+      }
+    });
+    // Request data on load
+    window.parent && window.parent.postMessage('REQUEST_PORTFOLIO', window.location.origin);
+  </script>
+</body>
+</html>

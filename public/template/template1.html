@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portfolio Template 1</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .container { max-width: 980px; }
+  </style>
+</head>
+<body class="bg-white text-gray-900">
+  <header class="border-b border-gray-200">
+    <div class="container mx-auto px-6 py-6 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <img id="profile_pic" class="w-12 h-12 rounded-full object-cover border" alt="avatar" />
+        <div>
+          <h1 class="text-2xl font-extrabold" id="name">Your Name</h1>
+          <div id="contact" class="text-xs text-gray-600"></div>
+        </div>
+      </div>
+      <div class="text-right text-sm">
+        <a id="linkedin" href="#" class="text-blue-600 hover:underline"></a>
+        <a id="github" href="#" class="ml-3 text-blue-600 hover:underline"></a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container mx-auto px-6 py-8 space-y-10">
+    <section>
+      <h2 class="text-xl font-semibold mb-2">Summary</h2>
+      <p id="summary" class="text-gray-700">Short summary goes here.</p>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-semibold mb-2">Education</h2>
+      <div id="education" class="space-y-3"></div>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-semibold mb-2">Experience</h2>
+      <div id="experience" class="space-y-3"></div>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-semibold mb-2">Projects</h2>
+      <div id="projects" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-semibold mb-2">Technical Skills</h2>
+      <div id="skills" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-semibold mb-2">Certifications</h2>
+      <div id="certifications" class="space-y-3"></div>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-semibold mb-2">Achievements</h2>
+      <ul id="achievements" class="list-disc pl-6 space-y-1"></ul>
+    </section>
+  </main>
+
+  <footer class="border-t border-gray-200 py-6 text-center text-sm text-gray-600">
+    <span>© <span id="year"></span> <span id="nameFooter">Your Name</span></span>
+  </footer>
+
+  <script>
+    function t(v){return v?String(v):''}
+    function fillTemplate(data) {
+      const p = data.personal_info || data.personal || {};
+      const gh = p.github || {};
+      const name = p.name || p.username || 'Your Name';
+      document.getElementById('name').textContent = name;
+      document.getElementById('nameFooter').textContent = name;
+      document.getElementById('summary').textContent = t(data.summary || p.bio);
+      document.getElementById('profile_pic').src = gh.profile_pic || p.profilePic || 'https://via.placeholder.com/96';
+      document.getElementById('contact').textContent = [p.email, p.phone].filter(Boolean).join(' • ');
+
+      const linkedinEl = document.getElementById('linkedin');
+      linkedinEl.textContent = p.linkedin ? 'LinkedIn' : '';
+      linkedinEl.href = p.linkedin || '#';
+      const githubEl = document.getElementById('github');
+      githubEl.textContent = (gh.profile_url || p.githubUrl) ? 'GitHub' : '';
+      githubEl.href = gh.profile_url || p.githubUrl || '#';
+
+      // Education
+      const eduWrap = document.getElementById('education');
+      eduWrap.innerHTML = '';
+      (data.education||[]).forEach(ed=>{
+        const el = document.createElement('div');
+        el.className = 'border border-gray-200 rounded-lg p-4';
+        el.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="font-semibold">${t(ed.institution)}</div>
+              <div class="text-sm text-gray-700">${t(ed.degree)}</div>
+            </div>
+            <div class="text-xs text-gray-600">${t(ed.years)}${ed.cgpa?` • CGPA: ${ed.cgpa}`:''}</div>
+          </div>`;
+        eduWrap.appendChild(el);
+      });
+
+      // Experience
+      const expWrap = document.getElementById('experience');
+      expWrap.innerHTML = '';
+      (data.experience||[]).forEach(ex=>{
+        const el = document.createElement('div');
+        el.className = 'border border-gray-200 rounded-lg p-4';
+        const resp = (ex.responsibilities||[]).map(r=>`<li class="list-disc ml-4">${t(r)}</li>`).join('');
+        el.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="font-semibold">${t(ex.title)} • ${t(ex.company)}</div>
+              <div class="text-xs text-gray-600">${t(ex.location)}</div>
+            </div>
+            <div class="text-xs text-gray-600">${t(ex.duration)}</div>
+          </div>
+          ${resp?`<ul class="mt-2 text-sm text-gray-700 space-y-1">${resp}</ul>`:''}`;
+        expWrap.appendChild(el);
+      });
+
+      // Projects
+      const prWrap = document.getElementById('projects');
+      prWrap.innerHTML='';
+      (data.projects||data.repos||[]).forEach(pr=>{
+        const el = document.createElement('div');
+        el.className = 'border border-gray-200 rounded-lg p-4';
+        const tech = Array.isArray(pr.technologies)?pr.technologies.join(', '):(pr.techStack||'');
+        const repo = pr.github_link || pr.repoLink;
+        const stars = pr.stars || 0; const forks = pr.forks || 0;
+        el.innerHTML = `
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <div class="font-semibold">${t(pr.name||pr.title)}</div>
+              <p class="mt-1 text-gray-700 text-sm">${t(pr.description)}</p>
+              <div class="mt-2 text-xs text-gray-600">${t(tech)}</div>
+              <div class="mt-2 text-xs text-gray-600">${pr.live_demo?`Live: ${t(pr.live_demo)}`:''}</div>
+            </div>
+            <div class="text-xs text-gray-600 whitespace-nowrap">${stars?`⭐ ${stars}`:''} ${forks?`• 🍴 ${forks}`:''}</div>
+          </div>
+          ${repo?`<a class="mt-3 inline-block text-blue-600 hover:underline text-sm" href="${repo}" target="_blank">View Repo</a>`:''}`;
+        prWrap.appendChild(el);
+      });
+
+      // Skills
+      const skillsWrap = document.getElementById('skills');
+      skillsWrap.innerHTML='';
+      const skills = data.technical_skills || data.skills || {};
+      Object.entries(skills).forEach(([k,v])=>{
+        const el=document.createElement('div');
+        el.className='border border-gray-200 rounded-lg p-4';
+        const list = Array.isArray(v)?v:[];
+        el.innerHTML = `<div class="font-semibold">${k.replace(/_/g,' ')}</div><div class="mt-1 text-sm text-gray-700">${list.join(', ')}</div>`;
+        skillsWrap.appendChild(el);
+      });
+
+      // Certifications
+      const certWrap = document.getElementById('certifications');
+      certWrap.innerHTML='';
+      (data.certifications||[]).forEach(c=>{
+        const el=document.createElement('div');
+        el.className='border border-gray-200 rounded-lg p-4';
+        el.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div class="font-semibold">${t(c.name)}</div>
+            <div class="text-xs text-gray-600">${t(c.date)}</div>
+          </div>
+          <p class="mt-1 text-sm text-gray-700">${t(c.details)}</p>`;
+        certWrap.appendChild(el);
+      });
+
+      // Achievements
+      const achWrap = document.getElementById('achievements');
+      achWrap.innerHTML='';
+      (data.achievements||[]).forEach(a=>{
+        const li=document.createElement('li');
+        li.textContent=t(a); achWrap.appendChild(li);
+      });
+
+      document.getElementById('year').textContent = new Date().getFullYear();
+    }
+    window.applyPortfolio = fillTemplate;
+
+    window.addEventListener('message', (e) => {
+      if (e.origin !== window.location.origin) return;
+      const msg = e.data;
+      if (msg && msg.type === 'APPLY_PORTFOLIO') {
+        try { window.applyPortfolio(msg.payload); } catch {}
+      }
+    });
+    window.parent && window.parent.postMessage('REQUEST_PORTFOLIO', window.location.origin);
+  </script>
+</body>
+</html>
