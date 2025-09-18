@@ -7,6 +7,6 @@ import OCRComponent from './OCRComponent.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <OCRComponent/>
+    <ResumeExtractor />
   </StrictMode>,
 )
