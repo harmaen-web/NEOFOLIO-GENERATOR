@@ -1,5 +1,5 @@
-import React from 'react'
-import {useState} from 'react';
+import React, { useState } from 'react';
+
 function App() {
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
@@ -12,37 +12,44 @@ function App() {
     try {
       // 1️⃣ Fetch profile
       const profileRes = await fetch(`https://api.github.com/users/${username}`);
-      const profile = await profileRes.json();
+      const profileRaw = await profileRes.json();
 
       // 2️⃣ Fetch repos
       const reposRes = await fetch(`https://api.github.com/users/${username}/repos`);
-      const repos = await reposRes.json();
-      console.log(repos)
-      // 3️⃣ Extract useful info
+      const reposRaw = await reposRes.json();
+
+      // 3️⃣ Extract only useful fields (with null fallback)
       const profileData = {
-        name: profile.name,
-        profilePic: profile.avatar_url,
-        bio: profile.bio,
-        location: profile.location,
-        githubUrl: profile.html_url,
-        website: profile.blog
+        name: profileRaw.name ?? null,
+        username: profileRaw.login ?? null,
+        profilePic: profileRaw.avatar_url ?? null,
+        bio: profileRaw.bio ?? null,
+        location: profileRaw.location ?? null,
+        githubUrl: profileRaw.html_url ?? null,
+        website: profileRaw.blog || null,
+        followers: profileRaw.followers ?? 0,
+        following: profileRaw.following ?? 0,
+        publicRepos: profileRaw.public_repos ?? 0,
       };
 
-      const projects = repos
-        .map(repo => ({
-          title: repo.name,
-          description: repo.description,
-          techStack: repo.language,
-          stars: repo.stargazers_count,
-          repoLink: repo.html_url
-        }));
+      const projects = Array.isArray(reposRaw)
+        ? reposRaw.map(repo => ({
+            title: repo.name ?? null,
+            description: repo.description ?? null,
+            techStack: repo.language ?? null,
+            stars: repo.stargazers_count ?? 0,
+            forks: repo.forks_count ?? 0,
+            repoLink: repo.html_url ?? null,
+          }))
+        : [];
 
+      // 4️⃣ Unified object
       const structuredData = {
         personal: profileData,
-        projects: projects
+        projects,
       };
 
-      console.log("✅ Structured Portfolio Data:", structuredData);
+      console.log("✅ Unified Portfolio Object:", structuredData);
       setPortfolio(structuredData);
     } catch (error) {
       console.error("❌ Error fetching GitHub data:", error);
@@ -82,9 +89,9 @@ function App() {
               className="w-20 h-20 rounded-full border"
             />
             <div>
-              <h2 className="text-2xl font-bold">{portfolio.personal.name}</h2>
-              <p className="text-gray-600">{portfolio.personal.bio}</p>
-              <p className="text-sm text-gray-500">{portfolio.personal.location}</p>
+              <h2 className="text-2xl font-bold">{portfolio.personal.name ?? "N/A"}</h2>
+              <p className="text-gray-600">{portfolio.personal.bio ?? "No bio"}</p>
+              <p className="text-sm text-gray-500">{portfolio.personal.location ?? "Unknown"}</p>
               <div className="flex gap-4 mt-2">
                 <a
                   href={portfolio.personal.githubUrl}
@@ -105,6 +112,9 @@ function App() {
                   </a>
                 )}
               </div>
+              <p className="mt-2 text-sm text-gray-500">
+                Followers: {portfolio.personal.followers} | Following: {portfolio.personal.following} | Public Repos: {portfolio.personal.publicRepos}
+              </p>
             </div>
           </div>
 
@@ -124,12 +134,15 @@ function App() {
                       rel="noopener noreferrer"
                       className="text-blue-700 hover:underline"
                     >
-                      {proj.title}
+                      {proj.title ?? "Untitled"}
                     </a>
                   </h4>
-                  <p className="text-gray-600">{proj.description}</p>
+                  <p className="text-gray-600">
+                    {proj.description ?? "No description"}
+                  </p>
                   <p className="text-sm mt-1">
-                    <span className="font-medium">Tech:</span> {proj.techStack || "N/A"} | ⭐ {proj.stars}
+                    <span className="font-medium">Tech:</span>{" "}
+                    {proj.techStack ?? "N/A"} | ⭐ {proj.stars} | 🍴 {proj.forks}
                   </p>
                 </li>
               ))}
@@ -141,4 +154,4 @@ function App() {
   );
 }
 
-export default App
+export default App;
