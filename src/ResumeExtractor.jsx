@@ -11,34 +11,17 @@ const loadGenAILibrary = async () => {
 };
 const API_KEY = "AIzaSyAHW-ptNdmm3hrLatlviFF0oLBGzL6-B70"; // Replace with your Gemini API key
 
-// Helper: extract text from image using Tesseract.js
-const extractTextFromImage = async (file) => {
-  const Tesseract = await import("tesseract.js");
-  const { data: { text } } = await Tesseract.recognize(file, "eng");
-  return text;
-};
-// Helper: extract text from PDF using pdfjs-dist
-const extractTextFromPDF = async (file) => {
-  const pdfjsLib = await import("pdfjs-dist/build/pdf");
-  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-  const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-  let text = "";
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const content = await page.getTextContent();
-    text += content.items.map(item => item.str).join(" ") + "\n";
+
+// Helper: convert ArrayBuffer to base64
+function arrayBufferToBase64(buffer) {
+  let binary = '';
+  let bytes = new Uint8Array(buffer);
+  let len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
   }
-  return text;
-};
-// Helper: extract text from DOCX using mammoth
-const extractTextFromDocx = async (file) => {
-  const mammoth = await import("mammoth");
-  const arrayBuffer = await file.arrayBuffer();
-  const { value } = await mammoth.convertToHtml({ arrayBuffer });
-  // Strip HTML tags
-  return value.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
-};
+  return window.btoa(binary);
+}
 
 const ResumeExtractor = () => {
   const [resumeText, setResumeText] = useState("");
@@ -55,37 +38,54 @@ const ResumeExtractor = () => {
   const handleExtract = async () => {
     setLoading(true);
     setResult("Extracting...");
-    let text = resumeText;
     try {
+      const GenAI = await loadGenAILibrary();
+      const ai = new GenAI({ apiKey: API_KEY });
+      let contents = [];
       if (file) {
         const ext = file.name.split(".").pop().toLowerCase();
-        if (["png", "jpg", "jpeg", "bmp", "gif", "webp"].includes(ext)) {
-          text = await extractTextFromImage(file);
-        } else if (ext === "pdf") {
-          text = await extractTextFromPDF(file);
-        } else if (["docx"].includes(ext)) {
-          text = await extractTextFromDocx(file);
+        const buffer = await file.arrayBuffer();
+        if (ext === "pdf") {
+          contents = [
+            {
+              inlineData: {
+                mimeType: "application/pdf",
+                data: arrayBufferToBase64(buffer)
+              }
+            },
+            {
+              text: "Extract this resume into structured JSON with keys: name, email, phone, education, experience, skills."
+            }
+          ];
+        } else if (["png", "jpg", "jpeg", "bmp", "gif", "webp"].includes(ext)) {
+          contents = [
+            {
+              inlineData: {
+                mimeType: `image/${ext === "jpg" ? "jpeg" : ext}`,
+                data: arrayBufferToBase64(buffer)
+              }
+            },
+            {
+              text: "Extract this resume into structured JSON with keys: name, email, phone, education, experience, skills."
+            }
+          ];
         } else {
-          setResult("Unsupported file type.");
+          setResult("Unsupported file type for direct vision extraction.");
           setLoading(false);
           return;
         }
-        setResumeText(text);
-      }
-      if (!text) {
-        setResult("No text found to extract.");
+      } else if (resumeText) {
+        contents = resumeText;
+      } else {
+        setResult("No input provided.");
         setLoading(false);
         return;
       }
-      const GenAI = await loadGenAILibrary();
-      const ai = new GenAI({ apiKey: API_KEY });
-      const prompt = `Extract the following resume into structured JSON with keys: name, email, phone, education, experience, skills. Resume:\n${text}`;
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash",
-        contents: prompt,
+        contents
       });
       setResult(response.text);
-      // Log structured JSON to console
       console.log("Gemini Structured JSON:", response.text);
     } catch (error) {
       setResult(`Error: ${error.message}`);
