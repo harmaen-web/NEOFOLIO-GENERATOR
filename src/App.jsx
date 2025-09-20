@@ -131,7 +131,9 @@ export default function App() {
   const [resumeRaw, setResumeRaw] = useState("");
   // GitHub states
   const [username, setUsername] = useState("");
+  const [ghToken, setGhToken] = useState("");
   const [githubLoading, setGithubLoading] = useState(false);
+  const [ghError, setGhError] = useState("");
   const [portfolio, setPortfolio] = useState(null);
   // Consolidation states
   const [consolidateLoading, setConsolidateLoading] = useState(false);
@@ -245,12 +247,29 @@ export default function App() {
   const handleFetchGitHub = async () => {
     if (!username) return alert("Enter a GitHub username!");
     setGithubLoading(true);
+    setGhError("");
     setPortfolio(null);
     try {
-      const profileRes = await fetch(`https://api.github.com/users/${username}`);
+      const headers = ghToken ? { Authorization: `Bearer ${ghToken}` } : {};
+
+      // Profile
+      const profileRes = await fetch(`https://api.github.com/users/${username}`, { headers });
+      if (!profileRes.ok) {
+        const rate = profileRes.headers.get('x-ratelimit-remaining');
+        const reset = profileRes.headers.get('x-ratelimit-reset');
+        throw new Error(`Profile fetch failed (${profileRes.status}). Rate left: ${rate ?? 'n/a'}${reset ? `, resets at ${new Date(+reset*1000).toLocaleTimeString()}` : ''}`);
+      }
       const profileRaw = await profileRes.json();
-      const reposRes = await fetch(`https://api.github.com/users/${username}/repos`);
+
+      // Repos (first 100, sorted by updated)
+      const reposRes = await fetch(`https://api.github.com/users/${username}/repos?per_page=100&sort=updated`, { headers });
+      if (!reposRes.ok) {
+        const rate = reposRes.headers.get('x-ratelimit-remaining');
+        const reset = reposRes.headers.get('x-ratelimit-reset');
+        throw new Error(`Repos fetch failed (${reposRes.status}). Rate left: ${rate ?? 'n/a'}${reset ? `, resets at ${new Date(+reset*1000).toLocaleTimeString()}` : ''}`);
+      }
       const reposRaw = await reposRes.json();
+
       const profileData = {
         name: profileRaw.name ?? null,
         username: profileRaw.login ?? null,
@@ -276,25 +295,50 @@ export default function App() {
       const structuredData = { personal: profileData, projects };
       setPortfolio(structuredData);
     } catch (error) {
-      setPortfolio({ error: error.message });
+      setGhError(error.message || String(error));
+      setPortfolio({ error: String(error) });
     } finally {
       setGithubLoading(false);
     }
   };
 
-  // Step 3: Consolidate and send to Gemini
+  // Step 3: Consolidate and send to Gemini (with strict schema)
   const handleConsolidate = async () => {
     setConsolidateLoading(true);
     setFinalJson(null);
     try {
       const GenAI = await loadGenAILibrary();
       const ai = new GenAI({ apiKey: API_KEY });
-      const prompt = `Given the following resume text and GitHub profile data, extract and return only the most useful information in a single JSON object.\n\nResume:\n${resumeRaw}\n\nGitHub:\n${JSON.stringify(portfolio, null, 2)}`;
+      const schema = `You are to return ONE JSON object ONLY (no markdown, no prose). Use EXACT keys and casing below. Normalize any synonyms from inputs into this schema. Use null for missing scalar fields and [] for empty lists.
+
+Schema:
+{
+  "contact_information": {
+    "name": string,
+    "email": string|null,
+    "phone": string|null,
+    "linkedin_url": string|null,
+    "github_url": string|null
+  },
+  "summary": string|null,
+  "education": [ { "institution": string, "degree": string|null, "years": string|null, "cgpa": string|null } ],
+  "experience": [ { "company": string, "role": string|null, "start_date": string|null, "end_date": string|null, "duration": string|null, "location": string|null, "responsibilities": string[] } ],
+  "projects": [ { "title": string, "description": string|null, "technologies": string[], "live_demo": string|null, "github_link": string|null } ],
+  "github_projects": [ { "title": string, "description": string|null, "tech_stack": string|null, "stars": number, "forks": number, "repo_link": string|null } ],
+  "technical_skills": { "languages": string[], "frameworks_libraries": string[], "databases": string[], "authentication_apis": string[], "dev_tools": string[], "ai_cv_tools": string[] },
+  "certificates": [ { "title": string, "date": string|null, "description": string|null } ],
+  "achievements": string[],
+  "github_profile_overview": { "username": string|null, "profile_pic": string|null, "followers": number, "following": number, "public_repos": number, "github_url": string|null }
+}`;
+      const prompt = `${schema}\n\nResume:\n${resumeRaw}\n\nGitHub:\n${JSON.stringify(portfolio, null, 2)}`;
       const response = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
       const text = response.text;
-      setFinalJson(text);
+      const parsed = safeParsePortfolio(text);
+      const normalized = normalizePortfolio(parsed);
+      const pretty = JSON.stringify(normalized, null, 2);
+      setFinalJson(pretty);
       // Try to post to preview if already loaded
-      tryPostToPreview(text);
+      tryPostToPreview(pretty);
     } catch (error) {
       setFinalJson(`Error: ${error.message}`);
     } finally {
@@ -318,12 +362,141 @@ export default function App() {
     }
   }
 
+  // Normalization: map any variant keys to strict schema used by templates
+  function normalizePortfolio(input) {
+    if (!input || typeof input !== 'object') return null;
+
+    const ci = input.contact_information || input.contactInfo || input.personal_info || input.personal || {};
+    const gpo = input.github_profile_overview || {};
+
+    const normalizeProjects = () => {
+      const a = Array.isArray(input.projects) ? input.projects.map(p => ({
+        title: p.title || p.name || null,
+        description: p.description ?? null,
+        technologies: Array.isArray(p.technologies) ? p.technologies : (p.tech_stack ? [p.tech_stack] : []),
+        live_demo: p.live_demo ?? null,
+        github_link: p.github_link || p.repoLink || p.repo_link || null,
+        stars: Number(p.stars || 0),
+        forks: Number(p.forks || 0),
+      })) : [];
+      const b = Array.isArray(input.github_projects) ? input.github_projects.map(p => ({
+        title: p.title || p.name || null,
+        description: p.description ?? null,
+        technologies: p.technologies || (p.tech_stack ? [p.tech_stack] : []),
+        live_demo: null,
+        github_link: p.repo_link || p.github_link || null,
+        stars: Number(p.stars || 0),
+        forks: Number(p.forks || 0),
+      })) : [];
+      return [...a, ...b];
+    };
+
+    const out = {
+      contact_information: {
+        name: ci.name || ci.username || null,
+        email: ci.email || null,
+        phone: ci.phone || null,
+        linkedin_url: ci.linkedin_url || ci.linkedin || null,
+        github_url: ci.github_url || (ci.github && ci.github.profile_url) || null,
+      },
+      summary: input.summary ?? ci.bio ?? null,
+      education: Array.isArray(input.education) ? input.education.map(e => ({
+        institution: e.institution || null,
+        degree: e.degree ?? null,
+        years: e.years ?? null,
+        cgpa: e.cgpa ?? null,
+      })) : [],
+      experience: Array.isArray(input.experience) ? input.experience.map(ex => ({
+        company: ex.company || null,
+        role: ex.role || ex.title || null,
+        start_date: ex.start_date ?? null,
+        end_date: ex.end_date ?? null,
+        duration: ex.duration ?? null,
+        location: ex.location ?? null,
+        responsibilities: Array.isArray(ex.responsibilities) ? ex.responsibilities : [],
+      })) : [],
+      projects: (Array.isArray(input.projects) ? input.projects.map(p => ({
+        title: p.title || p.name || null,
+        description: p.description ?? null,
+        technologies: Array.isArray(p.technologies) ? p.technologies : (p.tech_stack ? [p.tech_stack] : []),
+        live_demo: p.live_demo ?? null,
+        github_link: p.github_link || p.repoLink || p.repo_link || null,
+        stars: Number(p.stars || 0),
+        forks: Number(p.forks || 0),
+      })) : []),
+      github_projects: Array.isArray(input.github_projects) ? input.github_projects.map(p => ({
+        title: p.title || p.name || null,
+        description: p.description ?? null,
+        tech_stack: p.tech_stack || (Array.isArray(p.technologies) ? p.technologies.join(', ') : null),
+        stars: Number(p.stars || 0),
+        forks: Number(p.forks || 0),
+        repo_link: p.repo_link || p.github_link || null,
+      })) : [],
+      technical_skills: {
+        languages: (input.technical_skills && Array.isArray(input.technical_skills.languages)) ? input.technical_skills.languages : [],
+        frameworks_libraries: (input.technical_skills && Array.isArray(input.technical_skills.frameworks_libraries)) ? input.technical_skills.frameworks_libraries : [],
+        databases: (input.technical_skills && Array.isArray(input.technical_skills.databases)) ? input.technical_skills.databases : [],
+        authentication_apis: (input.technical_skills && Array.isArray(input.technical_skills.authentication_apis)) ? input.technical_skills.authentication_apis : [],
+        dev_tools: (input.technical_skills && Array.isArray(input.technical_skills.dev_tools)) ? input.technical_skills.dev_tools : [],
+        ai_cv_tools: (input.technical_skills && Array.isArray(input.technical_skills.ai_cv_tools)) ? input.technical_skills.ai_cv_tools : [],
+      },
+      certificates: Array.isArray(input.certificates || input.certifications) ? (input.certificates || input.certifications).map(c => ({
+        title: c.title || c.name || null,
+        date: c.date ?? null,
+        description: c.description || c.details || null,
+      })) : [],
+      achievements: Array.isArray(input.achievements) ? input.achievements : [],
+      github_profile_overview: {
+        username: gpo.username ?? null,
+        profile_pic: gpo.profile_pic || (ci.github && ci.github.profile_pic) || null,
+        followers: Number(gpo.followers ?? 0),
+        following: Number(gpo.following ?? 0),
+        public_repos: Number(gpo.public_repos ?? 0),
+        github_url: gpo.github_url || (ci.github_url ?? null),
+      },
+    };
+
+    return out;
+  }
+
   function tryPostToPreview(currentFinal) {
     const data = safeParsePortfolio(currentFinal ?? finalJson);
     const frame = previewRef.current;
     if (!data || !frame) return;
+
+    // Deduplicate projects on the fly (title+repo)
+    try {
+      const seen = new Set();
+      const uniq = [];
+      const all = [
+        ...((data.projects||[]).map(p=>({
+          title: p.title||'', repo: p.github_link||p.repo||p.repo_link||'', ...p
+        }))),
+        ...((data.github_projects||[]).map(p=>({
+          title: p.title||'', repo: p.repo_link||p.github_link||'', ...p
+        })))
+      ];
+      all.forEach(p => {
+        const key = (p.title||'').toLowerCase().trim() + '|' + (p.repo||'').toLowerCase().trim();
+        if (!seen.has(key)) { seen.add(key); uniq.push(p); }
+      });
+      // Keep unique list in projects; keep github_projects as is for reference
+      data.projects = uniq.map(({repo, ...rest}) => ({ ...rest, github_link: rest.github_link || repo || null }));
+    } catch {}
+
     // Post message to the iframe. Templates should be same-origin under /public.
     frame.contentWindow?.postMessage({ type: 'APPLY_PORTFOLIO', payload: data }, window.location.origin);
+  }
+
+  // Open selected template as a full page and pass data via localStorage
+  function openFullPage() {
+    const data = safeParsePortfolio(finalJson);
+    if (!data) return;
+    try {
+      localStorage.setItem('PORTFOLIO_DATA', JSON.stringify(data));
+      // open the selected template
+      window.open(templateSrc, '_blank');
+    } catch {}
   }
 
   // Listen for templates requesting data (optional future use)
@@ -438,6 +611,14 @@ export default function App() {
               placeholder="e.g., torvalds"
               className="px-3 py-2 rounded-lg border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 outline-none transition-colors duration-200 text-gray-900"
             />
+            <input
+              id="gh-token"
+              type="password"
+              value={ghToken}
+              onChange={(e) => setGhToken(e.target.value)}
+              placeholder="Optional: GitHub token (to avoid rate limits)"
+              className="px-3 py-2 rounded-lg border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 outline-none transition-colors duration-200 text-gray-900 min-w-[320px]"
+            />
             <button
               onClick={handleFetchGitHub}
               disabled={!username || githubLoading}
@@ -454,6 +635,10 @@ export default function App() {
             <div className="mt-4">
               <ProgressBar label="Fetching GitHub data..." color="from-indigo-600 to-indigo-400" />
             </div>
+          )}
+
+          {ghError && (
+            <div className="mt-3 text-sm text-red-600">{ghError}</div>
           )}
 
           {portfolio && (
@@ -499,42 +684,59 @@ export default function App() {
           )}
         </StepCard>
 
-        {/* Step 4 */}
-        <StepCard number="4" title="Choose a Template & Preview Portfolio">
-          <div className="flex items-center gap-3 flex-wrap">
-            <label className="text-sm text-gray-700">Template</label>
-            <select
-              value={selectedTemplate}
-              onChange={(e) => setSelectedTemplate(e.target.value)}
-              className="px-3 py-2 rounded-lg border border-gray-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-500 outline-none transition-colors duration-200 text-gray-900"
-            >
-              <option value="template1">Template 1</option>
-              <option value="template2">Template 2</option>
-              <option value="template3">Template 3</option>
-            </select>
+        {/* Step 4 - Full Width Preview */}
+        <div className="mt-10">
+          <div className="w-[100vw] relative left-1/2 right-1/2 -translate-x-1/2 bg-gradient-to-br from-violet-50 to-indigo-50">
+            <div className="mx-auto max-w-7xl px-6 py-10">
+              <div className="backdrop-blur-xl bg-white/30 border border-white/40 shadow-xl rounded-2xl p-6">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <label className="text-sm text-gray-800">Template</label>
+                  <select
+                    value={selectedTemplate}
+                    onChange={(e) => setSelectedTemplate(e.target.value)}
+                    className="px-3 py-2 rounded-lg border border-white/50 bg-white/50 text-gray-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-500 outline-none transition-colors duration-200"
+                  >
+                    <option value="template1">Template 1</option>
+                    <option value="template2">Template 2</option>
+                    <option value="template3">Template 3</option>
+                  </select>
 
-            <button
-              onClick={() => tryPostToPreview()}
-              disabled={!finalJson}
-              className={`px-4 py-2 rounded-lg text-white font-medium transition-colors duration-200 ${
-                !finalJson ? 'bg-gray-300 cursor-not-allowed' : 'bg-violet-600 hover:bg-violet-700'
-              }`}
-              type="button"
-            >
-              Apply Data
-            </button>
-          </div>
+                  <button
+                    onClick={() => tryPostToPreview()}
+                    disabled={!finalJson}
+                    className={`px-4 py-2 rounded-lg text-white font-medium transition-colors duration-200 ${
+                      !finalJson ? 'bg-violet-300 cursor-not-allowed' : 'bg-violet-600 hover:bg-violet-700'
+                    }`}
+                    type="button"
+                  >
+                    Apply Data
+                  </button>
 
-          <div className="mt-4 border border-gray-200 rounded-xl overflow-hidden">
-            <iframe
-              ref={previewRef}
-              title="Portfolio Preview"
-              src={templateSrc}
-              className="w-full h-[720px] bg-white"
-              onLoad={() => tryPostToPreview()}
-            />
+                  <button
+                    onClick={() => openFullPage()}
+                    disabled={!finalJson}
+                    className={`px-4 py-2 rounded-lg text-violet-700 font-medium border transition-colors duration-200 ${
+                      !finalJson ? 'bg-white/50 border-violet-200 cursor-not-allowed' : 'bg-white/70 border-violet-300 hover:bg-white'
+                    }`}
+                    type="button"
+                  >
+                    Open Full Page
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-6 rounded-2xl overflow-hidden border border-white/40 bg-white/40 backdrop-blur-xl shadow-2xl">
+                <iframe
+                  ref={previewRef}
+                  title="Portfolio Preview"
+                  src={templateSrc}
+                  className="w-full h-[820px] bg-transparent"
+                  onLoad={() => tryPostToPreview()}
+                />
+              </div>
+            </div>
           </div>
-        </StepCard>
+        </div>
       </div>
 
       <Footer />

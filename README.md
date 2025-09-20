@@ -1,12 +1,75 @@
-# React + Vite
+# Portfolio Generator (React + Vite)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An AI-assisted portfolio generator. Upload a resume, fetch GitHub data, consolidate into a strict JSON schema, and preview multiple portfolio templates. You can also open a full standalone page for sharing.
 
-Currently, two official plugins are available:
+## Tech Stack
+- **React 19** and **Vite 7**
+- **Tailwind CSS v4** with **@tailwindcss/vite**
+- **Templates**: Static HTML templates styled with Tailwind
+- **Syntax highlighting**: `react-syntax-highlighter`
+- **PDF/image OCR (optional inputs)**: `pdfjs-dist`, `tesseract.js`
+- **DOCX to text (optional inputs)**: `mammoth`
+- **Icons**: `lucide-react`
+- **AI**: Google GenAI Web SDK (loaded via CDN)
+- **Data sources**: GitHub REST API (public)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Requirements
+- Node.js >= 18.17
+- npm >= 9
 
-## Expanding the ESLint configuration
+## Quick Start
+1. Install dependencies
+   ```bash
+   npm i
+   ```
+2. Start the dev server
+   ```bash
+   npm run dev
+   ```
+3. Open the printed local URL (typically http://localhost:5173)
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Scripts
+- `npm run dev` — start Vite dev server
+- `npm run build` — production build
+- `npm run preview` — preview the production build locally
+- `npm run lint` — run ESLint
+- `npm start` — alias of `vite` for convenience
+
+## Configuration Notes
+- AI key: In `src/App.jsx`, replace the placeholder `API_KEY` value with your Gemini API key:
+  ```js
+  const API_KEY = "YOUR_GEMINI_API_KEY";
+  ```
+  The SDK is imported from a CDN: `https://aistudiocdn.com/@google/genai@^1.20.0`.
+- Templates live in `public/template/` and support direct opening with data loaded from `localStorage` via the "Open Full Page" button.
+
+## Project Structure (essentials)
+```
+root
+├─ public/
+│  └─ template/
+│     ├─ template1.html
+│     ├─ template2.html
+│     └─ template3.html
+├─ src/
+│  ├─ App.jsx
+│  ├─ main.jsx
+│  └─ index.css
+├─ package.json
+├─ vite.config.js
+└─ README.md
+```
+
+## How It Works (high level)
+1. Upload resume (PDF/Image supported) and extract text using GenAI vision when relevant.
+2. Fetch GitHub profile and repositories by username.
+3. Consolidate into a strict JSON schema via GenAI, then normalize/validate on the client.
+4. Preview in an iframe or open as a standalone page.
+
+## Troubleshooting
+- If ports are in use, change the Vite port or stop the conflicting process.
+- If icons for certain skills don’t load, the text label still renders. Add more icons in the templates’ `iconMap` if needed.
+- If your AI key is invalid or missing, Step 1/3 requests will fail. Update `API_KEY` in `src/App.jsx`.
+
+## License
+MIT (adjust if needed)

@@ -3,44 +3,51 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Portfolio Template 2 - Sidebar</title>
+  <title>Portfolio Template 2 - Sidebar Glass</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .bg-bubbles:before, .bg-bubbles:after { content: ""; position: absolute; border-radius: 9999px; filter: blur(50px); opacity: .35; pointer-events: none; }
+    .bg-bubbles:before { width: 420px; height: 420px; background: #c7d2fe; top: -100px; left: -60px; }
+    .bg-bubbles:after { width: 520px; height: 520px; background: #a7f3d0; bottom: -140px; right: -100px; }
+  </style>
 </head>
-<body class="min-h-screen bg-gray-50 text-gray-900">
-  <div class="flex min-h-screen">
-    <aside class="w-72 bg-white border-r border-gray-200 p-6">
+<body class="min-h-screen bg-gradient-to-b from-white via-indigo-50 to-emerald-50 text-gray-900 relative overflow-x-hidden">
+  <div class="bg-bubbles absolute inset-0"></div>
+  <div class="relative z-10 flex min-h-screen">
+    <aside class="w-80 bg-white/40 backdrop-blur-xl border-r border-white/50 p-6">
       <div class="flex flex-col items-center">
-        <img id="profilePic" src="" alt="profile" class="w-24 h-24 rounded-full object-cover border" />
+        <img id="profilePic" src="" alt="profile" class="w-24 h-24 rounded-full object-cover border border-white/70" />
         <h1 id="name" class="mt-4 text-xl font-bold">Your Name</h1>
-        <p id="location" class="mt-1 text-xs text-gray-600"></p>
-        <div id="contacts" class="mt-2 text-xs text-gray-700 text-center"></div>
+        <div id="contacts" class="mt-1 text-xs text-gray-700 text-center"></div>
         <div class="mt-3 flex flex-col gap-2 text-sm">
-          <a id="githubUrl" href="#" class="text-blue-600 hover:underline">GitHub</a>
-          <a id="linkedin" href="#" class="text-blue-600 hover:underline">LinkedIn</a>
-          <a id="website" href="#" class="text-blue-600 hover:underline"></a>
+          <a id="githubUrl" href="#" class="px-3 py-1.5 rounded-lg bg-white/50 border border-white/60 hover:bg-white/70 transition">GitHub</a>
+          <a id="linkedin" href="#" class="px-3 py-1.5 rounded-lg bg-white/50 border border-white/60 hover:bg-white/70 transition">LinkedIn</a>
+          <a id="website" href="#" class="px-3 py-1.5 rounded-lg bg-white/50 border border-white/60 hover:bg-white/70 transition"></a>
         </div>
       </div>
-      <div class="mt-6 grid grid-cols-3 gap-2 text-center text-xs text-gray-600">
-        <div><div class="font-semibold" id="followers">0</div>Followers</div>
-        <div><div class="font-semibold" id="following">0</div>Following</div>
-        <div><div class="font-semibold" id="publicRepos">0</div>Repos</div>
+      <div class="mt-6 grid grid-cols-3 gap-2 text-center text-xs text-gray-700">
+        <div class="rounded-xl bg-white/40 backdrop-blur border border-white/60 p-3"><div class="font-semibold" id="followers">0</div>Followers</div>
+        <div class="rounded-xl bg-white/40 backdrop-blur border border-white/60 p-3"><div class="font-semibold" id="following">0</div>Following</div>
+        <div class="rounded-xl bg-white/40 backdrop-blur border border-white/60 p-3"><div class="font-semibold" id="publicRepos">0</div>Repos</div>
       </div>
     </aside>
 
     <main class="flex-1 p-8 space-y-8">
       <section>
         <h2 class="text-lg font-semibold">Summary</h2>
-        <p id="bio" class="mt-2 text-gray-700 max-w-2xl">Short summary goes here.</p>
+        <div class="mt-2 rounded-2xl bg-white/40 backdrop-blur-xl border border-white/60 p-5">
+          <p id="bio" class="text-gray-800">Short summary goes here.</p>
+        </div>
       </section>
 
       <section>
         <h2 class="text-lg font-semibold">Education</h2>
-        <div id="education" class="mt-3 space-y-3"></div>
+        <div id="education" class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4"></div>
       </section>
 
       <section>
         <h2 class="text-lg font-semibold">Experience</h2>
-        <div id="experience" class="mt-3 space-y-3"></div>
+        <div id="experience" class="mt-3 grid grid-cols-1 gap-4"></div>
       </section>
 
       <section>
@@ -55,7 +62,7 @@
 
       <section>
         <h2 class="text-lg font-semibold">Certifications</h2>
-        <div id="certifications" class="mt-3 space-y-3"></div>
+        <div id="certifications" class="mt-3 grid grid-cols-1 gap-4"></div>
       </section>
 
       <section>
@@ -67,70 +74,103 @@
 
   <script>
     function t(v){return v?String(v):''}
+    function card(html){const el=document.createElement('div'); el.className='rounded-2xl bg-white/40 backdrop-blur-xl border border-white/60 p-4'; el.innerHTML=html; return el;}
+    function pick(data, pathArr, def=''){ let cur=data; for(const k of pathArr){ cur = (cur||{})[k]; } return cur ?? def; }
     function fillTemplate(data) {
-      const p = data.personal_info || data.personal || {};
-      const gh = p.github || {};
-      document.getElementById('name').textContent = p.name || p.username || 'Your Name';
-      document.getElementById('profilePic').src = gh.profile_pic || p.profilePic || 'https://via.placeholder.com/96';
-      document.getElementById('bio').textContent = t(data.summary || p.bio);
-      document.getElementById('location').textContent = '';
-      document.getElementById('contacts').textContent = [p.email, p.phone].filter(Boolean).join(' • ');
+      // Identity
+      const name = pick(data,['contact_information','name']) || pick(data,['personal_info','name']) || pick(data,['personal','username']) || 'Your Name';
+      document.getElementById('name').textContent = name;
+      const avatar = pick(data,['github_profile_overview','profile_pic']) || pick(data,['personal_info','github','profile_pic']) || pick(data,['personal','profilePic']) || 'https://via.placeholder.com/96';
+      document.getElementById('profilePic').src = avatar;
 
-      const ghLink = gh.profile_url || p.githubUrl; const liLink = p.linkedin; const web = p.website;
+      // Contacts and links
+      const email = pick(data,['contact_information','email']) || pick(data,['personal_info','email']);
+      const phone = pick(data,['contact_information','phone']) || pick(data,['personal_info','phone']);
+      document.getElementById('contacts').textContent = [email, phone].filter(Boolean).join(' • ');
+      const ghLink = pick(data,['contact_information','github_url']) || pick(data,['github_profile_overview','github_url']) || pick(data,['personal_info','github','profile_url']) || pick(data,['personal','githubUrl']);
+      const liLink = pick(data,['contact_information','linkedin_url']) || pick(data,['personal_info','linkedin']);
       const ghEl = document.getElementById('githubUrl'); ghEl.href = ghLink || '#'; ghEl.textContent = ghLink ? 'GitHub' : '';
       const liEl = document.getElementById('linkedin'); liEl.href = liLink || '#'; liEl.textContent = liLink ? 'LinkedIn' : '';
-      const wEl = document.getElementById('website'); wEl.href = web || '#'; wEl.textContent = web ? 'Website' : '';
 
-      document.getElementById('followers').textContent = gh.followers ?? 0;
-      document.getElementById('following').textContent = gh.following ?? 0;
-      document.getElementById('publicRepos').textContent = gh.public_repos ?? 0;
+      // Profile stats
+      const followers = pick(data,['github_profile_overview','followers']);
+      const following = pick(data,['github_profile_overview','following']);
+      const public_repos = pick(data,['github_profile_overview','public_repos']);
+      document.getElementById('followers').textContent = followers ?? 0;
+      document.getElementById('following').textContent = following ?? 0;
+      document.getElementById('publicRepos').textContent = public_repos ?? 0;
 
+      // Summary
+      document.getElementById('bio').textContent = t(data.summary || pick(data,['personal_info','bio']));
+
+      // Education
       const eduWrap = document.getElementById('education'); eduWrap.innerHTML='';
-      (data.education||[]).forEach(ed=>{
-        const el=document.createElement('div'); el.className='bg-white border border-gray-200 rounded-lg p-4 shadow-sm';
-        el.innerHTML = `<div class='flex items-center justify-between'><div><div class='font-semibold'>${t(ed.institution)}</div><div class='text-sm text-gray-700'>${t(ed.degree)}</div></div><div class='text-xs text-gray-600'>${t(ed.years)}${ed.cgpa?` • CGPA: ${ed.cgpa}`:''}</div></div>`;
-        eduWrap.appendChild(el);
-      });
+      (data.education||[]).forEach(ed=>{ eduWrap.appendChild(card(`<div class='flex items-center justify-between'><div><div class='font-semibold'>${t(ed.institution)}</div><div class='text-sm text-gray-800'>${t(ed.degree)}</div></div><div class='text-xs text-gray-700'>${t(ed.years)}${ed.cgpa?` • CGPA: ${ed.cgpa}`:''}</div></div>`)); });
 
+      // Experience
       const expWrap = document.getElementById('experience'); expWrap.innerHTML='';
       (data.experience||[]).forEach(ex=>{
-        const el=document.createElement('div'); el.className='bg-white border border-gray-200 rounded-lg p-4 shadow-sm';
+        const role = ex.role || ex.title || ''; const company = ex.company || ''; const duration = ex.duration || [ex.start_date, ex.end_date].filter(Boolean).join(' – ');
         const resp=(ex.responsibilities||[]).map(r=>`<li class='list-disc ml-4'>${t(r)}</li>`).join('');
-        el.innerHTML = `<div class='flex items-center justify-between'><div><div class='font-semibold'>${t(ex.title)} • ${t(ex.company)}</div><div class='text-xs text-gray-600'>${t(ex.location)}</div></div><div class='text-xs text-gray-600'>${t(ex.duration)}</div></div>${resp?`<ul class='mt-2 text-sm text-gray-700 space-y-1'>${resp}</ul>`:''}`;
-        expWrap.appendChild(el);
+        expWrap.appendChild(card(`<div class='flex items-center justify-between'><div><div class='font-semibold'>${t(role)} • ${t(company)}</div>${ex.location?`<div class='text-xs text-gray-700'>${t(ex.location)}</div>`:''}</div><div class='text-xs text-gray-700'>${t(duration)}</div></div>${resp?`<ul class='mt-2 text-sm text-gray-800 space-y-1'>${resp}</ul>`:''}`));
       });
 
+      // Projects (dedup title+repo)
       const prWrap = document.getElementById('projects'); prWrap.innerHTML='';
-      (data.projects||data.repos||[]).forEach(pr=>{
-        const el=document.createElement('div'); el.className='bg-white border border-gray-200 rounded-lg p-4 shadow-sm';
-        const tech = Array.isArray(pr.technologies)?pr.technologies.join(', '):(pr.techStack||'');
-        const repo = pr.github_link || pr.repoLink;
-        const stars = pr.stars || 0; const forks = pr.forks || 0;
-        el.innerHTML = `<h3 class='font-semibold'>${t(pr.name||pr.title)}</h3><p class='mt-1 text-sm text-gray-700'>${t(pr.description)}</p><div class='mt-2 text-xs text-gray-600'>${t(tech)}</div><div class='mt-2 text-xs text-gray-600'>${pr.live_demo?`Live: ${t(pr.live_demo)}`:''}</div><div class='mt-2 text-xs text-gray-600'>${stars?`⭐ ${stars}`:''} ${forks?`• 🍴 ${forks}`:''}</div>${repo?`<a class='mt-3 inline-block text-blue-600 hover:underline text-sm' href='${repo}' target='_blank'>View Repo</a>`:''}`;
-        prWrap.appendChild(el);
-      });
+      const combined=[];
+      (data.projects||[]).forEach(p=>combined.push({title:p.title||p.name, description:p.description, tech:Array.isArray(p.technologies)?p.technologies:(p.tech_stack?[p.tech_stack]:[]), repo:p.github_link||p.repoLink||p.repo_link, stars:p.stars||0, forks:p.forks||0, live:p.live_demo}));
+      (data.github_projects||[]).forEach(p=>combined.push({title:p.title||p.name, description:p.description, tech:p.technologies|| (p.tech_stack?[p.tech_stack]:[]), repo:p.repo_link||p.github_link, stars:p.stars||0, forks:p.forks||0}));
+      const seen=new Set();
+      const norm=combined.filter(p=>{ const key=(p.title||'').toLowerCase().trim()+'|'+(p.repo||'').toLowerCase().trim(); if(seen.has(key)) return false; seen.add(key); return true;});
+      norm.forEach(pr=>{ prWrap.appendChild(card(`<div class='flex items-start justify-between gap-4'><div><div class='font-semibold'>${t(pr.title)}</div><p class='mt-1 text-gray-800 text-sm'>${t(pr.description)}</p><div class='mt-2 text-xs text-gray-700'>${t((pr.tech||[]).join(', '))}</div><div class='mt-2 text-xs text-gray-700'>${pr.live?`Live: ${t(pr.live)}`:''}</div></div><div class='text-xs text-gray-700 whitespace-nowrap'>${pr.stars?`⭐ ${pr.stars}`:''} ${pr.forks?`• 🍴 ${pr.forks}`:''}</div></div>${pr.repo?`<a class='mt-3 inline-block text-blue-700 underline text-sm' href='${pr.repo}' target='_blank'>View Repo</a>`:''}`)); });
 
+      // Skills with icons
+      const iconMap = {
+        'html': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/html5/html5-plain.svg',
+        'css': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/css3/css3-plain.svg',
+        'javascript': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg',
+        'typescript': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg',
+        'react': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg',
+        'node.js': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg',
+        'node': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg',
+        'express': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/express/express-original.svg',
+        'tailwind css': 'https://www.vectorlogo.zone/logos/tailwindcss/tailwindcss-icon.svg',
+        'daisyui': 'https://avatars.githubusercontent.com/u/94872187?s=200&v=4',
+        'mongodb': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mongodb/mongodb-original.svg',
+        'mysql': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mysql/mysql-original.svg',
+        'redis': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/redis/redis-original.svg',
+        'git': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/git/git-original.svg',
+        'github': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/github/github-original.svg',
+        'python': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg',
+        'opencv': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/opencv/opencv-original.svg',
+        'tesseract': 'https://avatars.githubusercontent.com/u/1289199?s=200&v=4',
+        'whisper ai': 'https://avatars.githubusercontent.com/u/14957082?s=200&v=4',
+        'mistral ai': 'https://avatars.githubusercontent.com/u/119978094?s=200&v=4',
+        'jwt': 'https://jwt.io/img/pic_logo.svg',
+        'clerk': 'https://avatars.githubusercontent.com/u/12224918?s=200&v=4'
+      };
       const skillsWrap=document.getElementById('skills'); skillsWrap.innerHTML='';
-      const skills=data.technical_skills||data.skills||{}; Object.entries(skills).forEach(([k,v])=>{
-        const el=document.createElement('div'); el.className='bg-white border border-gray-200 rounded-lg p-4 shadow-sm';
-        const list=Array.isArray(v)?v:[]; el.innerHTML=`<div class='font-semibold'>${k.replace(/_/g,' ')}</div><div class='mt-1 text-sm text-gray-700'>${list.join(', ')}</div>`; skillsWrap.appendChild(el);
+      const skills=data.technical_skills||data.skills||{}; Object.entries(skills).forEach(([k,v])=>{ const list=Array.isArray(v)?v:[];
+        const chips = list.map(x=>{ const key=String(x).toLowerCase(); const src=iconMap[key]||iconMap[key.replace('.js','')]||''; return `<span class='inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-white/60 border border-white/70 mr-2 mb-2'><img src='${src}' onerror="this.style.display='none'" class='w-4 h-4'/>${x}</span>`; }).join('');
+        skillsWrap.appendChild(card(`<div class='font-semibold mb-2'>${k.replace(/_/g,' ')}</div><div class='mt-1 text-sm text-gray-800 flex flex-wrap'>${chips}</div>`));
       });
 
+      // Certifications
       const certWrap=document.getElementById('certifications'); certWrap.innerHTML='';
-      (data.certifications||[]).forEach(c=>{
-        const el=document.createElement('div'); el.className='bg-white border border-gray-200 rounded-lg p-4 shadow-sm';
-        el.innerHTML = `<div class='flex items-center justify-between'><div class='font-semibold'>${t(c.name)}</div><div class='text-xs text-gray-600'>${t(c.date)}</div></div><p class='mt-1 text-sm text-gray-700'>${t(c.details)}</p>`; certWrap.appendChild(el);
-      });
+      (data.certificates||data.certifications||[]).forEach(c=>{ const title=c.title||c.name; const desc=c.description||c.details; certWrap.appendChild(card(`<div class='flex items-center justify-between'><div class='font-semibold'>${t(title)}</div><div class='text-xs text-gray-700'>${t(c.date)}</div></div><p class='mt-1 text-sm text-gray-800'>${t(desc)}</p>`)); });
 
-      const achWrap=document.getElementById('achievements'); achWrap.innerHTML='';
-      (data.achievements||[]).forEach(a=>{ const li=document.createElement('li'); li.textContent=t(a); achWrap.appendChild(li); });
+      // Achievements
+      const achWrap=document.getElementById('achievements'); achWrap.innerHTML=''; (data.achievements||[]).forEach(a=>{ const li=document.createElement('li'); li.textContent=t(a); achWrap.appendChild(li); });
     }
-
     window.applyPortfolio = fillTemplate;
-    window.addEventListener('message', (e) => {
-      if (e.origin !== window.location.origin) return;
-      const msg = e.data; if (msg && msg.type === 'APPLY_PORTFOLIO') { try { window.applyPortfolio(msg.payload); } catch {} }
-    });
+    window.addEventListener('message', (e) => { if (e.origin !== window.location.origin) return; const msg = e.data; if (msg && msg.type === 'APPLY_PORTFOLIO') { try { window.applyPortfolio(msg.payload); } catch {} } });
+
+    // If opened directly, try load from localStorage
+    try {
+      const cached = localStorage.getItem('PORTFOLIO_DATA');
+      if (cached) { const data = JSON.parse(cached); window.applyPortfolio(data); }
+    } catch {}
+
     window.parent && window.parent.postMessage('REQUEST_PORTFOLIO', window.location.origin);
   </script>
 </body>

@@ -3,213 +3,284 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Portfolio Template 3 - Minimal</title>
+  <title>Portfolio Template 3 - Minimal Glass</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .bg-grid {
+      background-image: linear-gradient(to right, rgba(255,255,255,.08) 1px, transparent 1px),
+                        linear-gradient(to bottom, rgba(255,255,255,.08) 1px, transparent 1px);
+      background-size: 24px 24px;
+      background-position: top left;
+    }
+  </style>
 </head>
-<body class="bg-white text-gray-900">
-  <div class="mx-auto max-w-4xl px-6 py-8">
-    <!-- Header -->
-    <header class="text-center">
-      <img id="profile_pic" alt="avatar" class="mx-auto w-24 h-24 rounded-full object-cover border border-gray-200" />
-      <h1 id="name" class="mt-4 text-3xl font-extrabold">Your Name</h1>
-      <p id="summary" class="mt-2 text-gray-700"></p>
-      <div class="mt-3 flex justify-center flex-wrap gap-3 text-sm text-gray-700">
-        <span id="email"></span>
-        <span id="phone"></span>
-        <a id="linkedin" href="#" target="_blank" class="text-blue-600 hover:underline"></a>
-        <a id="github" href="#" target="_blank" class="text-blue-600 hover:underline"></a>
-      </div>
-      <div class="mt-2 text-xs text-gray-600" id="github_stats"></div>
-    </header>
+<body class="min-h-screen text-gray-900 relative overflow-x-hidden" style="
+  background: radial-gradient(1200px 600px at 10% -10%, #c7d2fe 0%, transparent 60%),
+              radial-gradient(1200px 600px at 90% 0%, #a7f3d0 0%, transparent 55%),
+              linear-gradient(180deg, #f8fafc, #eef2ff);
+">
+  <div class="absolute inset-0 bg-grid pointer-events-none"></div>
 
+  <!-- Top Nav / Branding -->
+  <nav class="sticky top-0 z-20 bg-white/30 backdrop-blur-xl border-b border-white/40">
+    <div class="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <img id="profile_pic" class="w-10 h-10 rounded-full object-cover border border-white/60" alt="avatar" />
+        <div class="text-lg font-extrabold" id="name">Your Name</div>
+      </div>
+      <div class="flex items-center gap-3 text-sm">
+        <a id="linkedin" href="#" target="_blank" class="px-3 py-1.5 rounded-lg bg-white/40 border border-white/50 hover:bg-white/60 transition">LinkedIn</a>
+        <a id="github" href="#" target="_blank" class="px-3 py-1.5 rounded-lg bg-white/40 border border-white/50 hover:bg-white/60 transition">GitHub</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="mx-auto max-w-6xl px-6 pt-10">
+    <div class="rounded-2xl border border-white/50 bg-white/30 backdrop-blur-xl shadow-xl p-6">
+      <p id="summary" class="text-lg text-gray-800"></p>
+      <div class="mt-3 flex flex-wrap gap-3 text-sm text-gray-700">
+        <span id="email" class="px-2.5 py-1 rounded-lg bg-white/50 border border-white/60"></span>
+        <span id="phone" class="px-2.5 py-1 rounded-lg bg-white/50 border border-white/60"></span>
+        <span id="github_stats" class="px-2.5 py-1 rounded-lg bg-white/50 border border-white/60"></span>
+      </div>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-6xl px-6 py-10 space-y-10">
     <!-- Education -->
-    <section class="mt-10">
-      <h2 class="text-xl font-semibold">Education</h2>
-      <div id="education" class="mt-3 space-y-3"></div>
+    <section>
+      <h2 class="text-xl font-semibold mb-3">Education</h2>
+      <div id="education" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
     </section>
 
     <!-- Experience -->
-    <section class="mt-10">
-      <h2 class="text-xl font-semibold">Experience</h2>
-      <div id="experience" class="mt-3 space-y-4"></div>
+    <section>
+      <h2 class="text-xl font-semibold mb-3">Experience</h2>
+      <div id="experience" class="grid grid-cols-1 gap-4"></div>
     </section>
 
     <!-- Projects -->
-    <section class="mt-10">
-      <h2 class="text-xl font-semibold">Projects</h2>
-      <div id="projects" class="mt-3 grid grid-cols-1 gap-4"></div>
+    <section>
+      <h2 class="text-xl font-semibold mb-3">Projects</h2>
+      <div id="projects" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4"></div>
     </section>
 
     <!-- Skills -->
-    <section class="mt-10">
-      <h2 class="text-xl font-semibold">Technical Skills</h2>
-      <div id="skills" class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+    <section>
+      <h2 class="text-xl font-semibold mb-3">Technical Skills</h2>
+      <div id="skills" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
     </section>
 
     <!-- Certifications -->
-    <section class="mt-10">
-      <h2 class="text-xl font-semibold">Certifications</h2>
-      <div id="certifications" class="mt-3 space-y-3"></div>
+    <section>
+      <h2 class="text-xl font-semibold mb-3">Certifications</h2>
+      <div id="certifications" class="grid grid-cols-1 gap-4"></div>
     </section>
 
     <!-- Achievements -->
-    <section class="mt-10">
-      <h2 class="text-xl font-semibold">Achievements</h2>
-      <ul id="achievements" class="mt-3 list-disc pl-6 space-y-1"></ul>
+    <section>
+      <h2 class="text-xl font-semibold mb-3">Achievements</h2>
+      <ul id="achievements" class="list-disc pl-6 space-y-1"></ul>
     </section>
-  </div>
+  </main>
+
+  <footer class="mx-auto max-w-6xl px-6 pb-10 text-sm text-gray-700">© <span id="year"></span> <span id="nameFooter">Your Name</span></footer>
 
   <script>
     function textOrEmpty(v) { return v ? String(v) : ''; }
-    function linkOrEmpty(href, label) { return href ? `<a class="text-blue-600 hover:underline" href="${href}" target="_blank">${label || href}</a>` : ''; }
+    function glassCard(html) { const el = document.createElement('div'); el.className = 'rounded-2xl border border-white/50 bg-white/30 backdrop-blur-xl shadow-lg p-4 hover:bg-white/40 transition'; el.innerHTML = html; return el; }
+
+    function pickName(data) {
+      const ci = data.contact_information || {}; const p = data.personal_info || data.personal || {}; return ci.name || p.name || p.username || 'Your Name';
+    }
+    function pickAvatar(data) {
+      const gpo = data.github_profile_overview || {}; const p = data.personal_info || data.personal || {}; const gh = p.github || {}; return gpo.profile_pic || gh.profile_pic || p.profilePic || 'https://via.placeholder.com/96';
+    }
+    function pickLinkedIn(data) {
+      const ci = data.contact_information || {}; const p = data.personal_info || data.personal || {}; return ci.linkedin_url || p.linkedin || '';
+    }
+    function pickGithubUrl(data) {
+      const ci = data.contact_information || {}; const gpo = data.github_profile_overview || {}; const p = data.personal_info || data.personal || {}; return ci.github_url || gpo.github_url || p.githubUrl || '';
+    }
+    function pickEmail(data) {
+      const ci = data.contact_information || {}; const p = data.personal_info || data.personal || {}; return ci.email || p.email || '';
+    }
+    function pickPhone(data) {
+      const ci = data.contact_information || {}; const p = data.personal_info || data.personal || {}; return ci.phone || p.phone || '';
+    }
+    function pickStats(data) {
+      const gpo = data.github_profile_overview || {}; const p = data.personal_info || data.personal || {}; const gh = p.github || {}; return {
+        followers: gpo.followers ?? gh.followers,
+        following: gpo.following ?? gh.following,
+        public_repos: gpo.public_repos ?? gh.public_repos,
+      };
+    }
 
     function renderEducation(list) {
-      const wrap = document.getElementById('education');
-      wrap.innerHTML = '';
+      const wrap = document.getElementById('education'); wrap.innerHTML = '';
       (list || []).forEach(ed => {
-        const el = document.createElement('div');
-        el.className = 'border border-gray-200 rounded-lg p-4';
-        el.innerHTML = `
-          <div class="flex items-center justify-between">
+        wrap.appendChild(glassCard(`
+          <div class=\"flex items-center justify-between\">
             <div>
-              <div class="font-semibold">${textOrEmpty(ed.institution)}</div>
-              <div class="text-sm text-gray-700">${textOrEmpty(ed.degree)}</div>
+              <div class=\"font-semibold\">${textOrEmpty(ed.institution)}</div>
+              <div class=\"text-sm text-gray-800\">${textOrEmpty(ed.degree)}</div>
             </div>
-            <div class="text-xs text-gray-600">${textOrEmpty(ed.years)}${ed.cgpa ? ` • CGPA: ${ed.cgpa}` : ''}</div>
-          </div>
-        `;
-        wrap.appendChild(el);
+            <div class=\"text-xs text-gray-700\">${textOrEmpty(ed.years)}${ed.cgpa ? ` • CGPA: ${ed.cgpa}` : ''}</div>
+          </div>`));
       });
     }
 
     function renderExperience(list) {
-      const wrap = document.getElementById('experience');
-      wrap.innerHTML = '';
+      const wrap = document.getElementById('experience'); wrap.innerHTML = '';
       (list || []).forEach(ex => {
-        const el = document.createElement('div');
-        el.className = 'border border-gray-200 rounded-lg p-4';
-        const respHtml = (ex.responsibilities || []).map(r => `<li class="ml-4 list-disc">${textOrEmpty(r)}</li>`).join('');
-        el.innerHTML = `
-          <div class="flex items-center justify-between">
+        const role = ex.role || ex.title || '';
+        const company = ex.company || '';
+        const duration = ex.duration || [ex.start_date, ex.end_date].filter(Boolean).join(' – ');
+        const respHtml = (ex.responsibilities || []).map(r => `<li class=\"ml-4 list-disc\">${textOrEmpty(r)}</li>`).join('');
+        wrap.appendChild(glassCard(`
+          <div class=\"flex items-center justify-between\">
             <div>
-              <div class="font-semibold">${textOrEmpty(ex.title)} • ${textOrEmpty(ex.company)}</div>
-              <div class="text-xs text-gray-600">${textOrEmpty(ex.location)}</div>
+              <div class=\"font-semibold\">${textOrEmpty(role)} • ${textOrEmpty(company)}</div>
+              ${ex.location ? `<div class=\"text-xs text-gray-700\">${textOrEmpty(ex.location)}</div>` : ''}
             </div>
-            <div class="text-xs text-gray-600">${textOrEmpty(ex.duration)}</div>
+            <div class=\"text-xs text-gray-700\">${textOrEmpty(duration)}</div>
           </div>
-          ${respHtml ? `<ul class="mt-2 text-sm text-gray-700 space-y-1">${respHtml}</ul>` : ''}
-        `;
-        wrap.appendChild(el);
+          ${respHtml ? `<ul class=\"mt-2 text-sm text-gray-800 space-y-1\">${respHtml}</ul>` : ''}`));
       });
     }
 
-    function renderProjects(list) {
-      const wrap = document.getElementById('projects');
-      wrap.innerHTML = '';
-      (list || []).forEach(pr => {
-        const el = document.createElement('div');
-        el.className = 'border border-gray-200 rounded-lg p-4';
-        const tech = Array.isArray(pr.technologies) ? pr.technologies.join(', ') : (pr.techStack || '');
-        const repo = pr.github_link || pr.repoLink;
-        const stars = pr.stars || 0; const forks = pr.forks || 0;
-        el.innerHTML = `
-          <div class="flex items-start justify-between gap-4">
+    function normalizeProjects(data) {
+      const listA = Array.isArray(data.projects) ? data.projects.map(p => ({
+        title: p.title || p.name,
+        description: p.description,
+        technologies: Array.isArray(p.technologies) ? p.technologies : (p.tech_stack ? [p.tech_stack] : []),
+        live_demo: p.live_demo,
+        repo: p.github_link || p.repoLink || p.repo_link || '',
+        stars: p.stars || 0,
+        forks: p.forks || 0,
+      })) : [];
+      const listB = Array.isArray(data.github_projects) ? data.github_projects.map(p => ({
+        title: p.title || p.name,
+        description: p.description,
+        technologies: p.technologies || (p.tech_stack ? [p.tech_stack] : []),
+        repo: p.repo_link || p.github_link || '',
+        stars: p.stars || 0,
+        forks: p.forks || 0,
+      })) : [];
+      const combined=[...listA, ...listB];
+      const seen=new Set();
+      return combined.filter(p=>{ const key=(p.title||'').toLowerCase().trim()+'|'+(p.repo||'').toLowerCase().trim(); if(seen.has(key)) return false; seen.add(key); return true;});
+    }
+
+    function renderProjects(data) {
+      const wrap = document.getElementById('projects'); wrap.innerHTML = '';
+      const list = normalizeProjects(data);
+      list.forEach(pr => {
+        const tech = Array.isArray(pr.technologies) ? pr.technologies.join(', ') : '';
+        wrap.appendChild(glassCard(`
+          <div class=\"flex items-start justify-between gap-4\">
             <div>
-              <div class="font-semibold text-lg">${textOrEmpty(pr.name || pr.title)}</div>
-              <p class="mt-1 text-gray-700 text-sm">${textOrEmpty(pr.description)}</p>
-              <div class="mt-2 text-xs text-gray-600">${textOrEmpty(tech)}</div>
-              <div class="mt-2 text-xs text-gray-600">${pr.live_demo ? `Live: ${textOrEmpty(pr.live_demo)}` : ''}</div>
+              <div class=\"font-semibold text-lg\">${textOrEmpty(pr.title)}</div>
+              <p class=\"mt-1 text-gray-800 text-sm\">${textOrEmpty(pr.description)}</p>
+              <div class=\"mt-2 text-xs text-gray-700\">${textOrEmpty(tech)}</div>
+              <div class=\"mt-2 text-xs text-gray-700\">${pr.live_demo ? `Live: ${textOrEmpty(pr.live_demo)}` : ''}</div>
             </div>
-            <div class="text-xs text-gray-600 whitespace-nowrap">${stars ? `⭐ ${stars}` : ''} ${forks ? `• 🍴 ${forks}` : ''}</div>
+            <div class=\"text-xs text-gray-700 whitespace-nowrap\">${pr.stars ? `⭐ ${pr.stars}` : ''} ${pr.forks ? `• 🍴 ${pr.forks}` : ''}</div>
           </div>
-          ${repo ? `<a class="mt-3 inline-block text-blue-600 hover:underline text-sm" href="${repo}" target="_blank">View Repo</a>` : ''}
-        `;
-        wrap.appendChild(el);
+          ${pr.repo ? `<a class=\"mt-3 inline-block text-blue-700 underline text-sm\" href=\"${pr.repo}\" target=\"_blank\">View Repo</a>` : ''}`));
       });
     }
 
     function renderSkills(skills) {
-      const wrap = document.getElementById('skills');
-      wrap.innerHTML = '';
+      const wrap = document.getElementById('skills'); wrap.innerHTML = '';
       if (!skills || typeof skills !== 'object') return;
+      const iconMap = {
+        'html': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/html5/html5-plain.svg',
+        'css': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/css3/css3-plain.svg',
+        'javascript': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg',
+        'typescript': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg',
+        'react': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg',
+        'node.js': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg',
+        'node': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg',
+        'express': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/express/express-original.svg',
+        'tailwind css': 'https://www.vectorlogo.zone/logos/tailwindcss/tailwindcss-icon.svg',
+        'daisyui': 'https://avatars.githubusercontent.com/u/94872187?s=200&v=4',
+        'mongodb': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mongodb/mongodb-original.svg',
+        'mysql': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mysql/mysql-original.svg',
+        'redis': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/redis/redis-original.svg',
+        'git': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/git/git-original.svg',
+        'github': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/github/github-original.svg',
+        'python': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg',
+        'opencv': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/opencv/opencv-original.svg',
+        'tesseract': 'https://avatars.githubusercontent.com/u/1289199?s=200&v=4',
+        'whisper ai': 'https://avatars.githubusercontent.com/u/14957082?s=200&v=4',
+        'mistral ai': 'https://avatars.githubusercontent.com/u/119978094?s=200&v=4',
+        'jwt': 'https://jwt.io/img/pic_logo.svg',
+        'clerk': 'https://avatars.githubusercontent.com/u/12224918?s=200&v=4'
+      };
       Object.entries(skills).forEach(([cat, items]) => {
-        const el = document.createElement('div');
-        el.className = 'border border-gray-200 rounded-lg p-4';
         const list = Array.isArray(items) ? items : [];
-        el.innerHTML = `
-          <div class="font-semibold">${cat.replace(/_/g,' ')}</div>
-          <div class="mt-1 text-sm text-gray-700">${list.join(', ')}</div>
-        `;
-        wrap.appendChild(el);
+        const chips = list.map(x=>{ const key=String(x).toLowerCase(); const src=iconMap[key]||iconMap[key.replace('.js','')]||''; return `<span class=\"inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-white/60 border border-white/70 mr-2 mb-2\"><img src=\"${src}\" onerror=\"this.style.display='none'\" class=\"w-4 h-4\"/>${x}</span>`; }).join('');
+        wrap.appendChild(glassCard(`
+          <div class=\"font-semibold mb-2\">${cat.replace(/_/g,' ')}</div>
+          <div class=\"mt-1 text-sm text-gray-800 flex flex-wrap\">${chips}</div>`));
       });
     }
 
     function renderCertifications(list) {
-      const wrap = document.getElementById('certifications');
-      wrap.innerHTML = '';
+      const wrap = document.getElementById('certifications'); wrap.innerHTML = '';
       (list || []).forEach(c => {
-        const el = document.createElement('div');
-        el.className = 'border border-gray-200 rounded-lg p-4';
-        el.innerHTML = `
-          <div class="flex items-center justify-between">
-            <div class="font-semibold">${textOrEmpty(c.name)}</div>
-            <div class="text-xs text-gray-600">${textOrEmpty(c.date)}</div>
+        const title = c.title || c.name; const desc = c.description || c.details;
+        wrap.appendChild(glassCard(`
+          <div class=\"flex items-center justify-between\">
+            <div class=\"font-semibold\">${textOrEmpty(title)}</div>
+            <div class=\"text-xs text-gray-700\">${textOrEmpty(c.date)}</div>
           </div>
-          <p class="mt-1 text-sm text-gray-700">${textOrEmpty(c.details)}</p>
-        `;
-        wrap.appendChild(el);
+          <p class=\"mt-1 text-sm text-gray-800\">${textOrEmpty(desc)}</p>`));
       });
     }
 
     function renderAchievements(list) {
-      const wrap = document.getElementById('achievements');
-      wrap.innerHTML = '';
-      (list || []).forEach(a => {
-        const li = document.createElement('li');
-        li.textContent = textOrEmpty(a);
-        wrap.appendChild(li);
-      });
+      const wrap = document.getElementById('achievements'); wrap.innerHTML = '';
+      (list || []).forEach(a => { const li = document.createElement('li'); li.textContent = textOrEmpty(a); wrap.appendChild(li); });
     }
 
     function fillTemplate(data) {
-      // Accept both new shape and previous shape
-      const p = data.personal_info || data.personal || {};
-      const gh = p.github || {};
-      const name = p.name || p.username || 'Your Name';
-      document.getElementById('name').textContent = name;
-      document.getElementById('summary').textContent = textOrEmpty(data.summary || p.bio);
-      document.getElementById('profile_pic').src = gh.profile_pic || p.profilePic || 'https://via.placeholder.com/96';
-      document.getElementById('email').textContent = p.email ? `✉️ ${p.email}` : '';
-      document.getElementById('phone').textContent = p.phone ? `📞 ${p.phone}` : '';
-      const linkedinLink = p.linkedin ? linkOrEmpty(p.linkedin, 'LinkedIn') : '';
-      const githubLink = (gh.profile_url || p.githubUrl) ? linkOrEmpty(gh.profile_url || p.githubUrl, 'GitHub') : '';
-      document.getElementById('linkedin').outerHTML = linkedinLink || '';
-      document.getElementById('github').outerHTML = githubLink || '';
-      const stats = [];
-      if (gh.followers != null) stats.push(`Followers: ${gh.followers}`);
-      if (gh.following != null) stats.push(`Following: ${gh.following}`);
-      if (gh.public_repos != null) stats.push(`Repos: ${gh.public_repos}`);
-      document.getElementById('github_stats').textContent = stats.join(' • ');
+      // Header/nav
+      const name = pickName(data); document.getElementById('name').textContent = name; document.getElementById('nameFooter').textContent = name;
+      document.getElementById('profile_pic').src = pickAvatar(data);
+      document.getElementById('summary').textContent = textOrEmpty(data.summary || '');
+      const email = pickEmail(data); document.getElementById('email').textContent = email ? `✉️ ${email}` : '';
+      const phone = pickPhone(data); document.getElementById('phone').textContent = phone ? `📞 ${phone}` : '';
+      const stats = pickStats(data); const statList = [];
+      if (stats.followers != null) statList.push(`Followers: ${stats.followers}`);
+      if (stats.following != null) statList.push(`Following: ${stats.following}`);
+      if (stats.public_repos != null) statList.push(`Repos: ${stats.public_repos}`);
+      document.getElementById('github_stats').textContent = statList.join(' • ');
+      const li = pickLinkedIn(data); const gh = pickGithubUrl(data);
+      const liEl = document.getElementById('linkedin'); liEl.style.display = li ? '' : 'none'; liEl.href = li || '#';
+      const ghEl = document.getElementById('github'); ghEl.style.display = gh ? '' : 'none'; ghEl.href = gh || '#';
 
+      // Sections
       renderEducation(data.education);
       renderExperience(data.experience);
-      renderProjects(data.projects || data.repos);
+      renderProjects(data);
       renderSkills(data.technical_skills || data.skills);
-      renderCertifications(data.certifications);
+      renderCertifications(data.certificates || data.certifications);
       renderAchievements(data.achievements);
+
+      document.getElementById('year').textContent = new Date().getFullYear();
     }
 
     window.applyPortfolio = fillTemplate;
+    window.addEventListener('message', (e) => { if (e.origin !== window.location.origin) return; const msg = e.data; if (msg && msg.type === 'APPLY_PORTFOLIO') { try { window.applyPortfolio(msg.payload); } catch {} } });
 
-    // Listen for postMessage from parent to apply data
-    window.addEventListener('message', (e) => {
-      if (e.origin !== window.location.origin) return;
-      const msg = e.data;
-      if (msg && msg.type === 'APPLY_PORTFOLIO') {
-        try { window.applyPortfolio(msg.payload); } catch {}
-      }
-    });
-    // Request data on load
+    // If opened directly, try load from localStorage
+    try {
+      const cached = localStorage.getItem('PORTFOLIO_DATA');
+      if (cached) { const data = JSON.parse(cached); window.applyPortfolio(data); }
+    } catch {}
+
     window.parent && window.parent.postMessage('REQUEST_PORTFOLIO', window.location.origin);
   </script>
 </body>
