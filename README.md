@@ -41,6 +41,16 @@ An AI-assisted portfolio generator. Upload a resume, fetch GitHub data, consolid
   const API_KEY = "YOUR_GEMINI_API_KEY";
   ```
   The SDK is imported from a CDN: `https://aistudiocdn.com/@google/genai@^1.20.0`.
+
+- Google OAuth: To enable Google Sign-In functionality:
+  1. Go to [Google Cloud Console](https://console.developers.google.com/)
+  2. Create a new project or select an existing one
+  3. Enable the Google+ API
+  4. Create OAuth 2.0 credentials (Web application)
+  5. Add your domain to authorized origins (e.g., `http://localhost:5173` for development)
+  6. Copy the Client ID and replace `YOUR_GOOGLE_CLIENT_ID` in `src/components/GoogleSignInButton.jsx`
+  7. Or set the environment variable `REACT_APP_GOOGLE_CLIENT_ID` in your `.env` file
+
 - Templates live in `public/template/` and support direct opening with data loaded from `localStorage` via the "Open Full Page" button.
 
 ## Project Structure (essentials)
@@ -53,6 +63,11 @@ root
 │     └─ template3.html
 ├─ src/
 │  ├─ App.jsx
+│  ├─ LandingPage.jsx
+│  ├─ components/
+│  │  └─ GoogleSignInButton.jsx
+│  ├─ utils/
+│  │  └─ googleAuth.js
 │  ├─ main.jsx
 │  └─ index.css
 ├─ package.json

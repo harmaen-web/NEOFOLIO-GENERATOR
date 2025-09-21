@@ -1,24 +1,145 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState, useEffect } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { Toaster } from "react-hot-toast";
+import LandingPage from "./LandingPage";
+import AuthModal from "./components/AuthModal";
+import PortfolioDownloader from "./components/PortfolioDownloader";
+import { useSimpleAuth, SimpleAuthProvider } from "./contexts/SimpleAuthContext";
+import { LogOut, User, ChevronDown, RefreshCw } from "lucide-react";
 
 // ----- Inline UI Components -----
 function Header() {
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const { user, signOut, isAuthenticated } = useSimpleAuth();
+
+  const handleSignIn = () => {
+    setShowAuthModal(true);
+  };
+
+  const handleAuthSuccess = (user) => {
+    setShowAuthModal(false);
+    // User is automatically redirected to main app via AuthContext
+  };
+
+  const handleSignOut = () => {
+    signOut();
+    setShowUserMenu(false);
+  };
+
+  const handleSwitchAccount = () => {
+    setShowUserMenu(false);
+    setShowAuthModal(true);
+  };
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showUserMenu && !event.target.closest('.user-menu-container')) {
+        setShowUserMenu(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [showUserMenu]);
+
   return (
     <header className="sticky top-0 z-30 bg-white/80 backdrop-blur border-b border-gray-200">
       <div className="mx-auto max-w-5xl px-6 py-4 flex items-center justify-between">
         <div className="text-2xl font-extrabold tracking-tight text-black select-none">
           Portfolio Generator
         </div>
+        
         <div className="flex items-center gap-3">
-          <button className="px-4 py-2 rounded-lg border border-black text-black bg-white hover:bg-gray-50 transition-colors duration-200" type="button">
-            Log In
-          </button>
-          <button className="px-4 py-2 rounded-lg bg-lime-300 text-black font-medium hover:bg-lime-400 transition-colors duration-200" type="button">
-            Sign Up
-          </button>
+          {isAuthenticated && user ? (
+            // User is signed in
+            <div className="relative user-menu-container">
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+              >
+                <img 
+                  src={user.picture} 
+                  alt={user.name}
+                  className="w-8 h-8 rounded-full border-2 border-gray-200"
+                />
+                <div className="text-left">
+                  <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                  <div className="text-xs text-gray-500">{user.email}</div>
+                </div>
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* User Menu Dropdown */}
+              {showUserMenu && (
+                <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                  <div className="px-4 py-3 border-b border-gray-100">
+                    <div className="flex items-center gap-3">
+                      <img 
+                        src={user.picture} 
+                        alt={user.name}
+                        className="w-10 h-10 rounded-full"
+                      />
+                      <div>
+                        <div className="font-medium text-gray-900">{user.name}</div>
+                        <div className="text-sm text-gray-500">{user.email}</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="py-2">
+                    <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                      <User className="w-4 h-4" />
+                      Profile Settings
+                    </button>
+                    <button 
+                      onClick={handleSwitchAccount}
+                      className="w-full px-4 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-2"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      Switch Account
+                    </button>
+                    <button 
+                      onClick={handleSignOut}
+                      className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            // User is not signed in
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={handleSignIn}
+                className="px-4 py-2 rounded-lg border border-black text-black bg-white hover:bg-gray-50 transition-colors duration-200 flex items-center gap-2"
+                type="button"
+              >
+                <User className="w-4 h-4" />
+                Log In
+              </button>
+              <button 
+                onClick={handleSignIn}
+                className="px-4 py-2 rounded-lg bg-lime-300 text-black font-medium hover:bg-lime-400 transition-colors duration-200"
+                type="button"
+              >
+                Sign Up
+              </button>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Auth Modal */}
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={handleAuthSuccess}
+      />
     </header>
   );
 }
@@ -31,7 +152,7 @@ function Hero() {
           Build Your Professional Portfolio in Seconds.
         </h1>
         <p className="mt-5 text-lg md:text-xl text-gray-700 max-w-3xl">
-          Upload your resume, connect your GitHub, and let AI generate a structured JSON portfolio for you.
+          Upload your LinkedIn resume as PDF, connect your GitHub, and let AI generate a structured JSON portfolio for you.
         </p>
       </div>
     </section>
@@ -124,7 +245,10 @@ function arrayBufferToBase64(buffer) {
   return window.btoa(binary);
 }
 
-export default function App() {
+function AppContent() {
+  // Landing page state
+  const [showLanding, setShowLanding] = useState(true);
+  
   // Resume states
   const [file, setFile] = useState(null);
   const [resumeLoading, setResumeLoading] = useState(false);
@@ -517,6 +641,21 @@ Schema:
     } catch {}
   };
 
+
+  // Handle landing page transition
+  const handleGetStarted = () => {
+    setShowLanding(false);
+  };
+
+  // Show landing page first
+  if (showLanding) {
+    return <LandingPage onGetStarted={handleGetStarted} />;
+  }
+
+  // Temporary: Show Google Auth Test (remove this after testing)
+  // Uncomment the next line to test Google OAuth
+  // return <GoogleAuthTest />;
+
   return (
     <div id="top" className="min-h-screen bg-white text-[#111]">
       {/* Light grid background */}
@@ -536,7 +675,7 @@ Schema:
 
       <div className="mx-auto max-w-5xl px-6 space-y-10 pb-16">
         {/* Step 1 */}
-        <StepCard number="1" title="Upload Your Resume">
+        <StepCard number="1" title="Upload your LinkedIn resume as PDF">
           <label className="block text-sm font-medium text-gray-800 mb-3">Resume file</label>
 
           {/* Drop zone */}
@@ -737,9 +876,59 @@ Schema:
             </div>
           </div>
         </div>
+
+        {/* Portfolio Download Section */}
+        {finalJson && (
+          <div className="mt-10">
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-8 border border-blue-200">
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">🎉 Your Portfolio is Ready!</h2>
+                <p className="text-gray-600">Download your portfolio files and deploy them live on the web</p>
+              </div>
+              
+              <PortfolioDownloader 
+                portfolioData={finalJson}
+                templateName={selectedTemplate}
+                className="max-w-md mx-auto"
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       <Footer />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <SimpleAuthProvider>
+      <AppContent />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+          },
+          success: {
+            duration: 3000,
+            iconTheme: {
+              primary: '#4ade80',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            duration: 5000,
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
+    </SimpleAuthProvider>
   );
 }

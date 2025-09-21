@@ -11,12 +11,19 @@
     "start": "vite"
   },
   "dependencies": {
+    "@google-cloud/local-auth": "^3.0.1",
     "@tailwindcss/vite": "^4.1.13",
+    "file-saver": "^2.0.5",
+    "firebase": "^12.3.0",
+    "framer-motion": "^12.23.16",
+    "googleapis": "^160.0.0",
+    "jszip": "^3.10.1",
     "lucide-react": "^0.544.0",
     "mammoth": "^1.10.0",
     "pdfjs-dist": "^5.4.149",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "react-hot-toast": "^2.6.0",
     "react-syntax-highlighter": "^15.6.6",
     "tailwindcss": "^4.1.13",
     "tesseract.js": "^6.0.1"
