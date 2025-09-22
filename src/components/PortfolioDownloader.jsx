@@ -26,22 +26,33 @@ const PortfolioDownloader = ({ portfolioData, templateName, className = '' }) =>
   };
 
   const generatePortfolioFiles = () => {
-    const userData = parsePortfolioData(portfolioData);
-    
-    // Generate the portfolio HTML with real user data
-    const htmlContent = generateHTML(userData, templateName);
-    const cssContent = generateCSS();
-    const jsContent = generateJS(userData);
-    const userDataJson = JSON.stringify(userData, null, 2);
-    
-    return {
-      'index.html': htmlContent,
-      'assets/style.css': cssContent,
-      'assets/main.js': jsContent,
-      'assets/userData.json': userDataJson,
-      '_redirects': '/* /index.html 200',
-      'README.txt': generateReadme()
-    };
+    try {
+      const userData = parsePortfolioData(portfolioData);
+      
+      if (!userData || typeof userData !== 'object') {
+        throw new Error('Invalid portfolio data: data is not a valid object');
+      }
+      
+      console.log('Generating portfolio files with data:', userData);
+      
+      // Generate the portfolio HTML with real user data
+      const htmlContent = generateHTML(userData, templateName);
+      const cssContent = generateCSS();
+      const jsContent = generateJS(userData);
+      const userDataJson = JSON.stringify(userData, null, 2);
+      
+      return {
+        'index.html': htmlContent,
+        'assets/style.css': cssContent,
+        'assets/main.js': jsContent,
+        'assets/userData.json': userDataJson,
+        '_redirects': '/* /index.html 200',
+        'README.txt': generateReadme()
+      };
+    } catch (error) {
+      console.error('Error in generatePortfolioFiles:', error);
+      throw new Error(`Failed to generate portfolio files: ${error.message}`);
+    }
   };
 
   const generateReadme = () => {
@@ -82,29 +93,38 @@ Need Help?
   };
 
   const generateHTML = (data, template) => {
-    // Extract real data from the portfolio
-    const name = data.name || data.fullName || 'Your Name';
-    const email = data.email || 'your.email@example.com';
-    const title = data.title || data.role || data.position || 'Professional';
-    const location = data.location || data.address || 'Your City, Country';
-    const phone = data.phone || data.contact || '+1 (555) 123-4567';
-    const about = data.about || data.bio || data.summary || 'Passionate professional with expertise in modern technologies and a drive for continuous learning and innovation.';
-    const picture = data.picture || data.avatar || data.profileImage || 'https://via.placeholder.com/150/667eea/ffffff?text=' + encodeURIComponent(name.charAt(0));
-    
-    // Extract skills
-    const skills = data.skills || data.technologies || data.expertise || ['JavaScript', 'React', 'Node.js', 'Python', 'HTML/CSS'];
-    
-    // Extract experience
-    const experience = data.experience || data.workExperience || data.employment || [
-      { title: 'Software Developer', company: 'Tech Company', duration: '2022 - Present', description: 'Developed and maintained web applications' },
-      { title: 'Junior Developer', company: 'Startup Inc', duration: '2020 - 2022', description: 'Built responsive websites and mobile apps' }
-    ];
-    
-    // Extract projects
-    const projects = data.projects || data.portfolio || data.work || [
-      { name: 'Portfolio Website', description: 'A modern portfolio built with React and Tailwind CSS', tech: 'React, Tailwind CSS', link: '#' },
-      { name: 'E-commerce App', description: 'Full-stack e-commerce application with payment integration', tech: 'Node.js, MongoDB, Stripe', link: '#' }
-    ];
+    try {
+      // Extract data using the consolidated schema structure
+      const contactInfo = data.contact_information || {};
+      const githubProfile = data.github_profile_overview || {};
+      
+      const name = contactInfo.name || 'Your Name';
+      const email = contactInfo.email || 'your.email@example.com';
+      const phone = contactInfo.phone || '+1 (555) 123-4567';
+      const linkedinUrl = contactInfo.linkedin_url || '';
+      const githubUrl = contactInfo.github_url || githubProfile.github_url || '';
+      
+      const about = (data.summary || 'Passionate professional with expertise in modern technologies and a drive for continuous learning and innovation.').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      const picture = githubProfile.profile_pic || 'https://via.placeholder.com/150/667eea/ffffff?text=' + encodeURIComponent(name.charAt(0));
+      
+      // Extract skills from technical_skills structure - ensure all are arrays and filter invalid entries
+      const technicalSkills = data.technical_skills || {};
+      const allSkills = [
+        ...(Array.isArray(technicalSkills.languages) ? technicalSkills.languages : []),
+        ...(Array.isArray(technicalSkills.frameworks_libraries) ? technicalSkills.frameworks_libraries : []),
+        ...(Array.isArray(technicalSkills.databases) ? technicalSkills.databases : []),
+        ...(Array.isArray(technicalSkills.authentication_apis) ? technicalSkills.authentication_apis : []),
+        ...(Array.isArray(technicalSkills.dev_tools) ? technicalSkills.dev_tools : []),
+        ...(Array.isArray(technicalSkills.ai_cv_tools) ? technicalSkills.ai_cv_tools : [])
+      ].filter(skill => skill && typeof skill === 'string');
+      
+      // Extract experience - ensure it's an array and filter out invalid entries
+      const experience = Array.isArray(data.experience) ? data.experience.filter(exp => exp && typeof exp === 'object') : [];
+      
+      // Extract projects (combine regular projects and github projects) - ensure arrays and filter invalid entries
+      const regularProjects = Array.isArray(data.projects) ? data.projects.filter(proj => proj && typeof proj === 'object') : [];
+      const githubProjects = Array.isArray(data.github_projects) ? data.github_projects.filter(proj => proj && typeof proj === 'object') : [];
+      const projects = [...regularProjects, ...githubProjects];
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -112,8 +132,8 @@ Need Help?
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${name} - Professional Portfolio</title>
-    <meta name="description" content="Professional portfolio of ${name} - ${title}">
-    <meta name="keywords" content="portfolio, ${name}, ${title}, developer, professional">
+    <meta name="description" content="Professional portfolio of ${name} - Professional">
+    <meta name="keywords" content="portfolio, ${name}, professional, developer">
     <link rel="stylesheet" href="assets/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👨‍💻</text></svg>">
@@ -127,19 +147,16 @@ Need Help?
                         <img src="${picture}" alt="${name}" class="profile-image" onerror="this.src='https://via.placeholder.com/150/667eea/ffffff?text=${encodeURIComponent(name.charAt(0))}'">
                         <div class="profile-info">
                             <h1 class="name">${name}</h1>
-                            <p class="title">${title}</p>
+                            <p class="title">Professional</p>
                             <p class="email">${email}</p>
                         </div>
                     </div>
                     <div class="contact-info">
                         <div class="contact-item">
-                            <strong>Location:</strong> ${location}
-                        </div>
-                        <div class="contact-item">
                             <strong>Phone:</strong> ${phone}
                         </div>
-                        ${data.github ? `<div class="contact-item"><strong>GitHub:</strong> <a href="https://github.com/${data.github}" target="_blank" class="text-white hover:underline">github.com/${data.github}</a></div>` : ''}
-                        ${data.linkedin ? `<div class="contact-item"><strong>LinkedIn:</strong> <a href="https://linkedin.com/in/${data.linkedin}" target="_blank" class="text-white hover:underline">linkedin.com/in/${data.linkedin}</a></div>` : ''}
+                        ${githubUrl ? `<div class="contact-item"><strong>GitHub:</strong> <a href="${githubUrl}" target="_blank" class="text-white hover:underline">${githubUrl}</a></div>` : ''}
+                        ${linkedinUrl ? `<div class="contact-item"><strong>LinkedIn:</strong> <a href="${linkedinUrl}" target="_blank" class="text-white hover:underline">${linkedinUrl}</a></div>` : ''}
                     </div>
                 </div>
             </div>
@@ -155,19 +172,24 @@ Need Help?
                 <section class="section">
                     <h2>Skills</h2>
                     <div class="skills-grid">
-                        ${skills.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
+                        ${allSkills.filter(skill => skill && typeof skill === 'string').map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
                     </div>
                 </section>
 
                 <section class="section">
                     <h2>Experience</h2>
                     <div class="experience-list">
-                        ${experience.map(exp => `
+                        ${experience.filter(exp => exp && (exp.company || exp.role || exp.title)).map(exp => `
                           <div class="experience-item">
-                            <h3>${exp.title || exp.position || 'Position'}</h3>
-                            <p class="company">${exp.company || exp.organization || 'Company'}</p>
-                            <p class="duration">${exp.duration || exp.period || exp.date || 'Duration'}</p>
-                            ${exp.description ? `<p class="description">${exp.description}</p>` : ''}
+                            <h3>${exp.role || exp.title || 'Position'}</h3>
+                            <p class="company">${exp.company || 'Company'}</p>
+                            <p class="duration">${exp.duration || [exp.start_date, exp.end_date].filter(Boolean).join(' - ') || 'Duration'}</p>
+                            ${exp.location ? `<p class="location">${exp.location}</p>` : ''}
+                            ${exp.responsibilities && exp.responsibilities.length > 0 ? `
+                              <ul class="responsibilities">
+                                ${exp.responsibilities.filter(resp => resp && typeof resp === 'string').map(resp => `<li>${resp}</li>`).join('')}
+                              </ul>
+                            ` : ''}
                           </div>
                         `).join('')}
                     </div>
@@ -176,26 +198,30 @@ Need Help?
                 <section class="section">
                     <h2>Projects</h2>
                     <div class="projects-grid">
-                        ${projects.map(project => `
+                        ${projects.filter(project => project && (project.title || project.name)).map(project => `
                           <div class="project-card">
-                            <h3>${project.name || project.title || 'Project'}</h3>
-                            <p>${project.description || project.desc || 'Project description'}</p>
-                            <div class="project-tech">${project.tech || project.technology || project.stack || 'Technology'}</div>
-                            ${project.link ? `<a href="${project.link}" target="_blank" class="project-link">View Project</a>` : ''}
+                            <h3>${project.title || project.name || 'Project'}</h3>
+                            <p>${project.description || 'Project description'}</p>
+                            <div class="project-tech">${Array.isArray(project.technologies) ? project.technologies.filter(tech => tech && typeof tech === 'string').join(', ') : (project.tech_stack || 'Technology')}</div>
+                            ${project.github_link || project.repo_link ? `<a href="${project.github_link || project.repo_link}" target="_blank" class="project-link">View Project</a>` : ''}
+                            ${project.live_demo ? `<a href="${project.live_demo}" target="_blank" class="project-link">Live Demo</a>` : ''}
+                            ${project.stars ? `<span class="project-stats">⭐ ${project.stars}</span>` : ''}
+                            ${project.forks ? `<span class="project-stats">🍴 ${project.forks}</span>` : ''}
                           </div>
                         `).join('')}
                     </div>
                 </section>
 
-                ${data.education ? `
+                ${data.education && Array.isArray(data.education) && data.education.length > 0 ? `
                 <section class="section">
                     <h2>Education</h2>
                     <div class="education-list">
-                        ${(data.education || []).map(edu => `
+                        ${data.education.filter(edu => edu && (edu.institution || edu.degree)).map(edu => `
                           <div class="education-item">
-                            <h3>${edu.degree || edu.course || 'Degree'}</h3>
-                            <p class="institution">${edu.institution || edu.school || edu.university || 'Institution'}</p>
-                            <p class="duration">${edu.duration || edu.year || edu.graduation || 'Duration'}</p>
+                            <h3>${edu.degree || 'Degree'}</h3>
+                            <p class="institution">${edu.institution || 'Institution'}</p>
+                            <p class="duration">${edu.years || 'Duration'}</p>
+                            ${edu.cgpa ? `<p class="cgpa">CGPA: ${edu.cgpa}</p>` : ''}
                           </div>
                         `).join('')}
                     </div>
@@ -214,6 +240,10 @@ Need Help?
     <script src="assets/main.js"></script>
 </body>
 </html>`;
+    } catch (error) {
+      console.error('Error generating HTML:', error);
+      throw new Error(`HTML generation failed: ${error.message}`);
+    }
   };
 
   const generateCSS = () => {
@@ -432,6 +462,35 @@ body {
     color: #5a67d8;
 }
 
+.project-stats {
+    display: inline-block;
+    margin-left: 8px;
+    font-size: 0.8rem;
+    color: #718096;
+}
+
+.responsibilities {
+    margin-top: 8px;
+    padding-left: 16px;
+}
+
+.responsibilities li {
+    margin-bottom: 4px;
+    color: #4a5568;
+}
+
+.location {
+    color: #718096;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+}
+
+.cgpa {
+    color: #48bb78;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
 /* Education */
 .education-list {
     display: flex;
@@ -582,8 +641,12 @@ document.addEventListener('DOMContentLoaded', function() {
       // Show loading toast
       toast.loading('Generating portfolio files...', { id: 'download' });
 
+      console.log('Starting portfolio generation with data:', portfolioData);
+
       const zip = new JSZip();
       const files = generatePortfolioFiles();
+
+      console.log('Generated files:', Object.keys(files));
 
       // Add files to zip
       for (const [filename, content] of Object.entries(files)) {
@@ -595,7 +658,10 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // Download the zip file
       const userData = parsePortfolioData(portfolioData);
-      const fileName = `${(userData.name || 'portfolio').replace(/[^a-zA-Z0-9]/g, '_')}_portfolio.zip`;
+      const userName = userData.contact_information?.name || userData.name || 'portfolio';
+      const fileName = `${userName.replace(/[^a-zA-Z0-9]/g, '_')}_portfolio.zip`;
+      
+      console.log('Downloading file:', fileName);
       saveAs(content, fileName);
       
       // Show success toast
@@ -606,7 +672,8 @@ document.addEventListener('DOMContentLoaded', function() {
       
     } catch (error) {
       console.error('Error generating portfolio:', error);
-      toast.error('Failed to generate portfolio. Please try again.', { id: 'download' });
+      const errorMessage = error.message || 'Unknown error occurred';
+      toast.error(`Failed to generate portfolio: ${errorMessage}`, { id: 'download' });
     } finally {
       setIsDownloading(false);
     }

@@ -264,7 +264,12 @@ function AppContent() {
   const [finalJson, setFinalJson] = useState(null);
   // Template/Preview state (Step 4)
   const [selectedTemplate, setSelectedTemplate] = useState("template1");
+  const [previewStatus, setPreviewStatus] = useState("idle"); // idle, loading, success, error
   const previewRef = useRef(null);
+  // Full-page overlay preview state and ref
+  // You can customize this to use a different icon/text or move placement later
+  const [showFullPagePreview, setShowFullPagePreview] = useState(false);
+  const fullPreviewRef = useRef(null);
   const templateSrc = useMemo(() => `/template/${selectedTemplate}.html`, [selectedTemplate]);
 
   // Drag & Drop (Step 1)
@@ -332,35 +337,50 @@ function AppContent() {
     setResumeLoading(true);
     setResumeRaw("");
     try {
+      if (!file) {
+        throw new Error("No file selected. Please upload a resume file first.");
+      }
+
+      // Validate file size (max 10MB)
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSize) {
+        throw new Error("File size too large. Please upload a file smaller than 10MB.");
+      }
+
       const GenAI = await loadGenAILibrary();
+      if (!GenAI) {
+        throw new Error("Failed to load AI library. Please check your internet connection.");
+      }
+
       const ai = new GenAI({ apiKey: API_KEY });
       let contents = [];
-      if (file) {
-        const ext = file.name.split(".").pop().toLowerCase();
-        const buffer = await file.arrayBuffer();
-        if (ext === "pdf") {
-          contents = [
-            { inlineData: { mimeType: "application/pdf", data: arrayBufferToBase64(buffer) } },
-            { text: "Extract and return only the raw text from this resume." },
-          ];
-        } else if (["png", "jpg", "jpeg", "bmp", "gif", "webp"].includes(ext)) {
-          contents = [
-            { inlineData: { mimeType: `image/${ext === "jpg" ? "jpeg" : ext}`, data: arrayBufferToBase64(buffer) } },
-            { text: "Extract and return only the raw text from this resume." },
-          ];
-        } else {
-          setResumeRaw("Unsupported file type for direct vision extraction.");
-          setResumeLoading(false);
-          return;
-        }
+      
+      const ext = file.name.split(".").pop().toLowerCase();
+      const buffer = await file.arrayBuffer();
+      
+      if (ext === "pdf") {
+        contents = [
+          { inlineData: { mimeType: "application/pdf", data: arrayBufferToBase64(buffer) } },
+          { text: "Extract and return only the raw text from this resume. Focus on extracting contact information, work experience, education, skills, and projects." },
+        ];
+      } else if (["png", "jpg", "jpeg", "bmp", "gif", "webp"].includes(ext)) {
+        contents = [
+          { inlineData: { mimeType: `image/${ext === "jpg" ? "jpeg" : ext}`, data: arrayBufferToBase64(buffer) } },
+          { text: "Extract and return only the raw text from this resume image. Focus on extracting contact information, work experience, education, skills, and projects." },
+        ];
       } else {
-        setResumeRaw("No file uploaded.");
-        setResumeLoading(false);
-        return;
+        throw new Error("Unsupported file type. Please upload a PDF or image file (PNG, JPG, JPEG, BMP, GIF, WEBP).");
       }
+
       const response = await ai.models.generateContent({ model: "gemini-2.5-flash", contents });
+      
+      if (!response || !response.text) {
+        throw new Error("No text extracted from the resume. Please try with a clearer image or different file.");
+      }
+
       setResumeRaw(response.text);
     } catch (error) {
+      console.error('Resume extraction error:', error);
       setResumeRaw(`Error: ${error.message}`);
     } finally {
       setResumeLoading(false);
@@ -369,28 +389,49 @@ function AppContent() {
 
   // Step 2: GitHub fetch
   const handleFetchGitHub = async () => {
-    if (!username) return alert("Enter a GitHub username!");
+    if (!username.trim()) {
+      setGhError("Please enter a valid GitHub username.");
+      return;
+    }
+
     setGithubLoading(true);
     setGhError("");
     setPortfolio(null);
+    
     try {
       const headers = ghToken ? { Authorization: `Bearer ${ghToken}` } : {};
 
       // Profile
       const profileRes = await fetch(`https://api.github.com/users/${username}`, { headers });
       if (!profileRes.ok) {
-        const rate = profileRes.headers.get('x-ratelimit-remaining');
-        const reset = profileRes.headers.get('x-ratelimit-reset');
-        throw new Error(`Profile fetch failed (${profileRes.status}). Rate left: ${rate ?? 'n/a'}${reset ? `, resets at ${new Date(+reset*1000).toLocaleTimeString()}` : ''}`);
+        if (profileRes.status === 404) {
+          throw new Error(`GitHub user "${username}" not found. Please check the username and try again.`);
+        } else if (profileRes.status === 403) {
+          const rateLimit = profileRes.headers.get('x-ratelimit-remaining');
+          const resetTime = profileRes.headers.get('x-ratelimit-reset');
+          if (rateLimit === '0') {
+            const resetDate = new Date(parseInt(resetTime) * 1000);
+            throw new Error(`GitHub API rate limit exceeded. Please try again after ${resetDate.toLocaleTimeString()}, or add a GitHub token to increase limits.`);
+          }
+          throw new Error("Access forbidden. Please check your GitHub token or try again later.");
+        } else if (profileRes.status === 401) {
+          throw new Error("Invalid GitHub token. Please check your token or remove it to use public access.");
+        } else {
+          throw new Error(`GitHub API error (${profileRes.status}). Please try again later.`);
+        }
       }
       const profileRaw = await profileRes.json();
 
       // Repos (first 100, sorted by updated)
       const reposRes = await fetch(`https://api.github.com/users/${username}/repos?per_page=100&sort=updated`, { headers });
       if (!reposRes.ok) {
-        const rate = reposRes.headers.get('x-ratelimit-remaining');
-        const reset = reposRes.headers.get('x-ratelimit-reset');
-        throw new Error(`Repos fetch failed (${reposRes.status}). Rate left: ${rate ?? 'n/a'}${reset ? `, resets at ${new Date(+reset*1000).toLocaleTimeString()}` : ''}`);
+        if (reposRes.status === 403) {
+          const rateLimit = reposRes.headers.get('x-ratelimit-remaining');
+          if (rateLimit === '0') {
+            throw new Error("GitHub API rate limit exceeded for repositories. Please try again later or add a GitHub token.");
+          }
+        }
+        throw new Error(`Failed to fetch repositories (${reposRes.status}). Please try again later.`);
       }
       const reposRaw = await reposRes.json();
 
@@ -406,6 +447,7 @@ function AppContent() {
         following: profileRaw.following ?? 0,
         publicRepos: profileRaw.public_repos ?? 0,
       };
+      
       const projects = Array.isArray(reposRaw)
         ? reposRaw.map((repo) => ({
             title: repo.name ?? null,
@@ -416,9 +458,11 @@ function AppContent() {
             repoLink: repo.html_url ?? null,
           }))
         : [];
+        
       const structuredData = { personal: profileData, projects };
       setPortfolio(structuredData);
     } catch (error) {
+      console.error('GitHub fetch error:', error);
       setGhError(error.message || String(error));
       setPortfolio({ error: String(error) });
     } finally {
@@ -430,8 +474,22 @@ function AppContent() {
   const handleConsolidate = async () => {
     setConsolidateLoading(true);
     setFinalJson(null);
+    
     try {
+      // Validate inputs
+      if (!resumeRaw || resumeRaw.trim() === '') {
+        throw new Error("No resume data available. Please extract your resume first.");
+      }
+      
+      if (!portfolio || portfolio.error) {
+        throw new Error("No GitHub data available. Please fetch your GitHub profile first.");
+      }
+
       const GenAI = await loadGenAILibrary();
+      if (!GenAI) {
+        throw new Error("Failed to load AI library. Please check your internet connection.");
+      }
+
       const ai = new GenAI({ apiKey: API_KEY });
       const schema = `You are to return ONE JSON object ONLY (no markdown, no prose). Use EXACT keys and casing below. Normalize any synonyms from inputs into this schema. Use null for missing scalar fields and [] for empty lists.
 
@@ -456,19 +514,96 @@ Schema:
 }`;
       const prompt = `${schema}\n\nResume:\n${resumeRaw}\n\nGitHub:\n${JSON.stringify(portfolio, null, 2)}`;
       const response = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
+      
+      if (!response || !response.text) {
+        throw new Error("No response from AI. Please try again.");
+      }
+      
       const text = response.text;
       const parsed = safeParsePortfolio(text);
+      
+      if (!parsed) {
+        throw new Error("Failed to parse AI response. The response may not be valid JSON.");
+      }
+      
       const normalized = normalizePortfolio(parsed);
+      
+      // Validate the normalized data
+      const validationResult = validatePortfolioSchema(normalized);
+      if (!validationResult.isValid) {
+        console.warn('Schema validation warnings:', validationResult.warnings);
+        // Continue with warnings, but log them
+      }
+      
       const pretty = JSON.stringify(normalized, null, 2);
       setFinalJson(pretty);
       // Try to post to preview if already loaded
       tryPostToPreview(pretty);
     } catch (error) {
+      console.error('Consolidation error:', error);
       setFinalJson(`Error: ${error.message}`);
     } finally {
       setConsolidateLoading(false);
     }
   };
+
+  // Validation function for portfolio schema
+  function validatePortfolioSchema(data) {
+    const warnings = [];
+    let isValid = true;
+
+    if (!data || typeof data !== 'object') {
+      return { isValid: false, warnings: ['Data is not a valid object'] };
+    }
+
+    // Check required top-level fields
+    const requiredFields = [
+      'contact_information', 'summary', 'education', 'experience', 
+      'projects', 'github_projects', 'technical_skills', 'certificates', 
+      'achievements', 'github_profile_overview'
+    ];
+
+    requiredFields.forEach(field => {
+      if (!(field in data)) {
+        warnings.push(`Missing required field: ${field}`);
+        isValid = false;
+      }
+    });
+
+    // Validate contact_information structure
+    if (data.contact_information && typeof data.contact_information === 'object') {
+      const ci = data.contact_information;
+      if (!ci.name) warnings.push('contact_information.name is missing');
+    } else if (data.contact_information) {
+      warnings.push('contact_information should be an object');
+      isValid = false;
+    }
+
+    // Validate arrays
+    const arrayFields = ['education', 'experience', 'projects', 'github_projects', 'certificates', 'achievements'];
+    arrayFields.forEach(field => {
+      if (data[field] && !Array.isArray(data[field])) {
+        warnings.push(`${field} should be an array`);
+        isValid = false;
+      }
+    });
+
+    // Validate technical_skills structure
+    if (data.technical_skills && typeof data.technical_skills === 'object') {
+      const skillCategories = ['languages', 'frameworks_libraries', 'databases', 'authentication_apis', 'dev_tools', 'ai_cv_tools'];
+      skillCategories.forEach(category => {
+        if (data.technical_skills[category] && !Array.isArray(data.technical_skills[category])) {
+          warnings.push(`technical_skills.${category} should be an array`);
+          isValid = false;
+        }
+      });
+    } else if (data.technical_skills) {
+      warnings.push('technical_skills should be an object');
+      isValid = false;
+    }
+
+    return { isValid, warnings };
+  }
 
   // Step 4 helpers: safely parse JSON from model and post to iframe template
   function safeParsePortfolio(maybeJson) {
@@ -583,10 +718,31 @@ Schema:
     return out;
   }
 
-  function tryPostToPreview(currentFinal) {
+  // Send data to either the inline preview or the full-page overlay preview
+  // You can pass a specific frame ref (e.g., fullPreviewRef) to target a different iframe
+  function tryPostToPreview(currentFinal, targetRef = previewRef) {
     const data = safeParsePortfolio(currentFinal ?? finalJson);
-    const frame = previewRef.current;
-    if (!data || !frame) return;
+    const frame = targetRef.current;
+    
+    if (!data) {
+      console.warn('No valid data to send to preview');
+      setPreviewStatus('error');
+      return;
+    }
+    
+    if (!frame) {
+      console.warn('Preview iframe not ready');
+      setPreviewStatus('error');
+      return;
+    }
+
+    setPreviewStatus('loading');
+
+    // Validate data before sending
+    const validation = validatePortfolioSchema(data);
+    if (!validation.isValid) {
+      console.warn('Data validation failed:', validation.warnings);
+    }
 
     // Deduplicate projects on the fly (title+repo)
     try {
@@ -606,21 +762,29 @@ Schema:
       });
       // Keep unique list in projects; keep github_projects as is for reference
       data.projects = uniq.map(({repo, ...rest}) => ({ ...rest, github_link: rest.github_link || repo || null }));
-    } catch {}
+    } catch (error) {
+      console.error('Error deduplicating projects:', error);
+    }
 
     // Post message to the iframe. Templates should be same-origin under /public.
-    frame.contentWindow?.postMessage({ type: 'APPLY_PORTFOLIO', payload: data }, window.location.origin);
+    try {
+      frame.contentWindow?.postMessage({ type: 'APPLY_PORTFOLIO', payload: data }, window.location.origin);
+      console.log('Portfolio data sent to preview successfully');
+      setPreviewStatus('success');
+    } catch (error) {
+      console.error('Error sending data to preview:', error);
+      setPreviewStatus('error');
+    }
   }
 
-  // Open selected template as a full page and pass data via localStorage
+  // Open selected template in an in-app full-page overlay (no browser tab, no reload)
+  // You can later swap the icon/text by editing the Back button inside the overlay section
   function openFullPage() {
-    const data = safeParsePortfolio(finalJson);
-    if (!data) return;
-    try {
-      localStorage.setItem('PORTFOLIO_DATA', JSON.stringify(data));
-      // open the selected template
-      window.open(templateSrc, '_blank');
-    } catch {}
+    setShowFullPagePreview(true);
+
+    // Ensure data is applied to the overlay iframe after it loads
+    // If already loaded, try sending immediately as well
+    setTimeout(() => tryPostToPreview(undefined, fullPreviewRef), 0);
   }
 
   // Listen for templates requesting data (optional future use)
@@ -811,12 +975,27 @@ Schema:
           {finalJson && (
             <div className="mt-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-600">Result</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">Consolidated Portfolio JSON</span>
+                  {(() => {
+                    try {
+                      const parsed = JSON.parse(finalJson);
+                      const validation = validatePortfolioSchema(parsed);
+                      return validation.isValid ? (
+                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">✓ Valid</span>
+                      ) : (
+                        <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">⚠ Has Issues</span>
+                      );
+                    } catch {
+                      return <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">✗ Invalid JSON</span>;
+                    }
+                  })()}
+                </div>
                 <button onClick={copyFinalJson} className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-gray-800 hover:bg-gray-50 transition-colors duration-200" type="button">
                   Copy to Clipboard
                 </button>
               </div>
-              <SyntaxHighlighter language="json" style={oneLight} customStyle={{ borderRadius: 12, padding: 16, border: "1px solid #e5e7eb" }}>
+              <SyntaxHighlighter language="json" style={oneLight} customStyle={{ borderRadius: 12, padding: 16, border: "1px solid #e5e7eb", maxHeight: "400px", overflow: "auto" }}>
                 {String(finalJson)}
               </SyntaxHighlighter>
             </div>
@@ -842,13 +1021,24 @@ Schema:
 
                   <button
                     onClick={() => tryPostToPreview()}
-                    disabled={!finalJson}
-                    className={`px-4 py-2 rounded-lg text-white font-medium transition-colors duration-200 ${
-                      !finalJson ? 'bg-violet-300 cursor-not-allowed' : 'bg-violet-600 hover:bg-violet-700'
+                    disabled={!finalJson || previewStatus === 'loading'}
+                    className={`px-4 py-2 rounded-lg text-white font-medium transition-colors duration-200 flex items-center gap-2 ${
+                      !finalJson || previewStatus === 'loading' ? 'bg-violet-300 cursor-not-allowed' : 'bg-violet-600 hover:bg-violet-700'
                     }`}
                     type="button"
                   >
-                    Apply Data
+                    {previewStatus === 'loading' ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                        <span>Applying...</span>
+                      </>
+                    ) : (
+                      <>
+                        {previewStatus === 'success' && <span className="text-green-200">✓</span>}
+                        {previewStatus === 'error' && <span className="text-red-200">✗</span>}
+                        <span>Apply Data</span>
+                      </>
+                    )}
                   </button>
 
                   <button
@@ -864,6 +1054,7 @@ Schema:
                 </div>
               </div>
 
+              {/* Keep the apply-area toolbar minimal; place Download button BELOW the inline preview for consistency */}
               <div className="mt-6 rounded-2xl overflow-hidden border border-white/40 bg-white/40 backdrop-blur-xl shadow-2xl">
                 <iframe
                   ref={previewRef}
@@ -873,6 +1064,24 @@ Schema:
                   onLoad={() => tryPostToPreview()}
                 />
               </div>
+
+              {/* Download button mirrored here, just below the preview */}
+              {finalJson && (
+                <div className="mt-4">
+                  {/* You can move this container to reposition the download button below/next to the Open Full Page button */}
+                  <PortfolioDownloader 
+                    portfolioData={(() => {
+                      try {
+                        return finalJson ? JSON.parse(finalJson) : null;
+                      } catch {
+                        return null;
+                      }
+                    })()}
+                    templateName={selectedTemplate}
+                    className="max-w-md"
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -887,7 +1096,13 @@ Schema:
               </div>
               
               <PortfolioDownloader 
-                portfolioData={finalJson}
+                portfolioData={(() => {
+                  try {
+                    return finalJson ? JSON.parse(finalJson) : null;
+                  } catch {
+                    return null;
+                  }
+                })()}
                 templateName={selectedTemplate}
                 className="max-w-md mx-auto"
               />
@@ -895,6 +1110,51 @@ Schema:
           </div>
         )}
       </div>
+
+      {/* Full-page overlay preview without reload */}
+      {showFullPagePreview && (
+        <div className="fixed inset-0 z-[100] bg-white flex flex-col">
+          {/* Top bar with Back button and optional Download */}
+          <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-gray-200 bg-white sticky top-0">
+            {/* Minimal back control - customize icon/text later */}
+            <button
+              type="button"
+              onClick={() => setShowFullPagePreview(false)}
+              className="inline-flex items-center gap-2 text-gray-800 hover:text-gray-900 px-2 py-1 rounded"
+              aria-label="Back"
+            >
+              {/* You can swap this text for an icon component, e.g., ← or a Lucide icon */}
+              <span className="text-base sm:text-lg">←</span>
+              <span className="text-sm sm:text-base font-medium">Back</span>
+            </button>
+
+            {/* Optional Download button in full-page view — same behavior as Apply Data */}
+            {finalJson && (
+              <div className="ml-auto">
+                {/* Move this block if you want a different placement */}
+                <PortfolioDownloader 
+                  portfolioData={(() => {
+                    try { return finalJson ? JSON.parse(finalJson) : null; } catch { return null; }
+                  })()}
+                  templateName={selectedTemplate}
+                  className=""
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Full-page iframe */}
+          <div className="flex-1 min-h-0">
+            <iframe
+              ref={fullPreviewRef}
+              title="Portfolio Preview (Full Page)"
+              src={templateSrc}
+              className="w-full h-full"
+              onLoad={() => tryPostToPreview(undefined, fullPreviewRef)}
+            />
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>
