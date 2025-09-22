@@ -1,6 +1,6 @@
 # Portfolio Generator (React + Vite)
 
-An AI-assisted portfolio generator. Upload a resume, fetch GitHub data, consolidate into a strict JSON schema, and preview multiple portfolio templates. You can also open a full standalone page for sharing.
+THEME: A AI-assisted portfolio generator. Upload a resume, fetch GitHub data, consolidate into a strict JSON schema, and preview multiple portfolio templates. You can also open a full standalone page for sharing.
 
 ## Tech Stack
 - **React 19** and **Vite 7**
