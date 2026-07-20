@@ -25,7 +25,11 @@
   <nav class="sticky top-0 z-20 bg-white/30 backdrop-blur-xl border-b border-white/40">
     <div class="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <img id="profile_pic" class="w-10 h-10 rounded-full object-cover border border-white/60" alt="avatar" />
+        <label class="relative block w-10 h-10 cursor-pointer" title="Upload a profile image">
+          <img id="profile_pic" class="w-10 h-10 rounded-full object-cover border border-white/60" alt="Profile preview" />
+          <span class="absolute inset-0 grid place-items-center rounded-full bg-slate-900/35 text-xl font-light text-white">+</span>
+          <input id="profile_image_input" type="file" accept="image/*" class="hidden" />
+        </label>
         <div class="text-lg font-extrabold" id="name">Your Name</div>
       </div>
       <div class="flex items-center gap-3 text-sm">
@@ -86,7 +90,17 @@
 
   <footer class="mx-auto max-w-6xl px-6 pb-10 text-sm text-gray-700">© <span id="year"></span> <span id="nameFooter">Your Name</span></footer>
 
+  <script src="/template/template-runtime.js"></script>
   <script>
+    let customAvatar = '';
+    const profileImage = document.getElementById('profile_pic');
+    document.getElementById('profile_image_input').addEventListener('change', (event) => {
+      const image = event.target.files?.[0];
+      if (!image) return;
+      const reader = new FileReader();
+      reader.onload = () => { customAvatar = reader.result; profileImage.src = customAvatar; };
+      reader.readAsDataURL(image);
+    });
     function textOrEmpty(v) { return v ? String(v) : ''; }
     function glassCard(html) { const el = document.createElement('div'); el.className = 'rounded-2xl border border-white/50 bg-white/30 backdrop-blur-xl shadow-lg p-4 hover:bg-white/40 transition'; el.innerHTML = html; return el; }
 
@@ -248,7 +262,7 @@
     function fillTemplate(data) {
       // Header/nav
       const name = pickName(data); document.getElementById('name').textContent = name; document.getElementById('nameFooter').textContent = name;
-      document.getElementById('profile_pic').src = pickAvatar(data);
+      profileImage.src = customAvatar || pickAvatar(data);
       document.getElementById('summary').textContent = textOrEmpty(data.summary || '');
       const email = pickEmail(data); document.getElementById('email').textContent = email ? `✉️ ${email}` : '';
       const phone = pickPhone(data); document.getElementById('phone').textContent = phone ? `📞 ${phone}` : '';

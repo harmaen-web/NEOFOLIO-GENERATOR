@@ -15,7 +15,11 @@
     <header class="border-b border-white/60 bg-white/40 backdrop-blur-xl">
       <div class="container mx-auto px-6 py-6 flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <img id="profile_pic" class="w-12 h-12 rounded-full object-cover border border-white/60" alt="avatar" />
+          <label class="relative block w-12 h-12 cursor-pointer" title="Upload a profile image">
+            <img id="profile_pic" class="w-12 h-12 rounded-full object-cover border border-white/60" alt="Profile preview" />
+            <span class="absolute inset-0 grid place-items-center rounded-full bg-slate-900/35 text-2xl font-light text-white">+</span>
+            <input id="profile_image_input" type="file" accept="image/*" class="hidden" />
+          </label>
           <div>
             <h1 class="text-2xl font-extrabold" id="name">Your Name</h1>
             <div id="contact" class="text-xs text-gray-700"></div>
@@ -72,7 +76,17 @@
     </footer>
   </div>
 
+  <script src="/template/template-runtime.js"></script>
   <script>
+    let customAvatar = '';
+    const profileImage = document.getElementById('profile_pic');
+    document.getElementById('profile_image_input').addEventListener('change', (event) => {
+      const image = event.target.files?.[0];
+      if (!image) return;
+      const reader = new FileReader();
+      reader.onload = () => { customAvatar = reader.result; profileImage.src = customAvatar; };
+      reader.readAsDataURL(image);
+    });
     function t(v){return v?String(v):''}
     function card(html){const el=document.createElement('div'); el.className='rounded-2xl border border-white/60 bg-white/40 backdrop-blur-xl p-4'; el.innerHTML=html; return el;}
     function pick(data, pathArr, def=''){ let cur=data; for(const k of pathArr){ cur = (cur||{})[k]; } return cur ?? def; }
@@ -81,7 +95,7 @@
       const name = pick(data, ['contact_information','name']) || pick(data, ['personal_info','name']) || pick(data, ['personal','username']) || 'Your Name';
       const avatar = pick(data, ['github_profile_overview','profile_pic']) || pick(data, ['personal_info','github','profile_pic']) || pick(data, ['personal','profilePic']) || 'https://via.placeholder.com/96';
       document.getElementById('name').textContent = name; document.getElementById('nameFooter').textContent = name;
-      document.getElementById('profile_pic').src = avatar;
+      profileImage.src = customAvatar || avatar;
       const email = pick(data, ['contact_information','email']) || pick(data, ['personal_info','email']);
       const phone = pick(data, ['contact_information','phone']) || pick(data, ['personal_info','phone']);
       document.getElementById('contact').textContent = [email, phone].filter(Boolean).join(' • ');

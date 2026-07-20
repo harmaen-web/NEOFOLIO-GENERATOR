@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+// ESLint's current JSX analysis does not detect the `motion.*` member expression.
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 import { Download, ExternalLink, CheckCircle, Copy, Globe, FileText } from 'lucide-react';
 import JSZip from 'jszip';
@@ -90,7 +92,7 @@ Need Help?
 `;
   };
 
-  const generateHTML = (data, template) => {
+  const _generateHTML = (data) => {
     try {
       // Extract data using the consolidated schema structure
       const contactInfo = data.contact_information || {};
@@ -244,7 +246,7 @@ Need Help?
     }
   };
 
-  const generateHTMLTailwind = (data, template) => {
+  const generateHTMLTailwind = (data) => {
     try {
       const contactInfo = data.contact_information || {};
       const githubProfile = data.github_profile_overview || {};

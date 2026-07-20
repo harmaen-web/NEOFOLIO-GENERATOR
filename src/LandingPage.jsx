@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+// ESLint's current JSX analysis does not detect the `motion.*` member expression.
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, SkipForward, Upload, Github, FileJson, Eye } from 'lucide-react';
 
